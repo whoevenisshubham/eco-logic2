@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from phase2_features import analyze_code_features, legacy_model_vector, rich_feature_rows
+from feature_engineering import analyze_code_features, legacy_model_vector, rich_feature_rows
 
 
 PY_BUBBLE = """
@@ -83,7 +83,7 @@ def main():
     assert busy["busy_wait_score"] > 0
     assert col["stride_penalty"] >= row["stride_penalty"]
     assert cpp["parser_backend"].startswith("tree-sitter") or cpp["parser_backend"].startswith("fallback")
-    print("Phase 2 Tree-sitter checks passed.")
+    print("Tree-sitter feature checks passed.")
 
 
 if __name__ == "__main__":

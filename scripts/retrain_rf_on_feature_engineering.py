@@ -1,7 +1,7 @@
 """Retrain a RandomForest baseline using Phase-2 (tree-sitter) features.
 
 Usage:
-  python scripts/retrain_rf_on_phase2.py --csv eco_logic_synthetic_benchmark.csv
+    python scripts/retrain_rf_on_feature_engineering.py --csv eco_logic_synthetic_benchmark.csv
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
 
-import phase2_features
+import feature_engineering
 
 
 def build_dataset(df: pd.DataFrame):
@@ -34,8 +34,8 @@ def build_dataset(df: pd.DataFrame):
         if target is None:
             continue
         try:
-            bundle = phase2_features.analyze_code_features(code, input_n=input_n, tdp=tdp, cores=cores)
-            vec = phase2_features.legacy_model_vector(bundle)
+            bundle = feature_engineering.analyze_code_features(code, input_n=input_n, tdp=tdp, cores=cores)
+            vec = feature_engineering.legacy_model_vector(bundle)
             X.append(vec)
             y.append(float(target))
             rows.append(row.get("snippet_id", ""))
@@ -51,7 +51,7 @@ def build_dataset(df: pd.DataFrame):
 def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--csv", default="eco_logic_synthetic_benchmark.csv")
-    parser.add_argument("--out", default="phase2_model.pkl")
+    parser.add_argument("--out", default="feature_engineered_rf_model.pkl")
     parser.add_argument("--test-size", type=float, default=0.2)
     parser.add_argument("--random-state", type=int, default=42)
     args = parser.parse_args(argv if argv is not None else None)

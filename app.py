@@ -10,7 +10,7 @@ import load_env
 from groq_client import generate_code_explanation, generate_refactor
 from explainability import LEGACY_FEATURE_NAMES, ast_to_dot, build_ast_preview, compute_shap_summary
 from runtime_harness import measure_runtime
-from phase2_features import analyze_code_features, legacy_model_vector, rich_feature_rows
+from feature_engineering import analyze_code_features, legacy_model_vector, rich_feature_rows
 from carbon_providers import (
     CarbonProviderError,
     DEFAULT_MAHARASHTRA_ZONE,
@@ -24,7 +24,7 @@ import streamlit as st
 
 
 st.set_page_config(
-    page_title="Eco-Logic Phase 1 Agent",
+    page_title="Cool Ecologic",
     page_icon="E",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -41,7 +41,7 @@ except Exception:
 @st.cache_resource
 def load_model():
     model_files = [
-        "phase1_model.pkl",
+        "baseline_rf_model.pkl",
         "high_precision_energy_model.pkl",
         "energy_predictor_model.pkl",
     ]
@@ -549,13 +549,13 @@ def main():
     model, model_name = load_model()
     dataset, dataset_name = load_dataset()
 
-    st.title("Eco-Logic Phase 1: Autonomous Agent and Visualization")
+    st.title("Cool Ecologic: Code Refactor Studio")
     st.caption(
         "Closed-loop refactoring agent + carbon translation + energy-time Pareto frontier"
     )
 
     if model is None:
-        st.error("No model file found. Add phase1_model.pkl in the project root.")
+        st.error("No model file found. Add baseline_rf_model.pkl in the project root.")
         st.stop()
 
     if dataset is None:
@@ -847,7 +847,7 @@ def main():
                     else:
                         st.info("No SHAP data available for this model instance.")
 
-        with st.expander("Phase 2 feature metrics"):
+        with st.expander("Feature engineering metrics"):
             left_rows = rich_feature_rows(base_eval["feature_bundle"])
             right_rows = rich_feature_rows(best["eval"]["feature_bundle"])
             left_df = pd.DataFrame(left_rows, columns=["feature", "original"])
@@ -1015,40 +1015,40 @@ def main():
             "When execution fails, runtime falls back to a proxy mode and is tagged in tooltips."
         )
 
-        with st.expander("Phase 3 AST-GNN"):
+        with st.expander("Graph energy model"):
             st.write(
-                "The AST-GNN pipeline is implemented in phase3_ast_gnn.py and can be run independently. "
+                "The graph-based energy model is implemented in graph_energy_model.py and can be run independently. "
                 "It builds Tree-sitter graphs, trains a pure-PyTorch GraphSAGE regressor, and compares it with the RandomForest baseline."
             )
-            st.code("python tests/phase3_gnn_demo.py", language="bash")
-            show_phase3 = st.checkbox("Show Phase 3 / Phase 2 predictions for the current snippet")
-            if show_phase3:
+            st.code("python tests/graph_energy_model_demo.py", language="bash")
+            show_graph_model = st.checkbox("Show graph model / baseline predictions for the current snippet")
+            if show_graph_model:
                 try:
-                    import phase3_ast_gnn as p3
+                    import graph_energy_model as p3
                 except Exception:
                     p3 = None
 
-                st.markdown("**Phase‑2 RandomForest (compatibility) prediction**")
+                st.markdown("**Baseline RandomForest prediction**")
                 try:
-                    if os.path.exists("phase2_model.pkl"):
-                        p2 = joblib.load("phase2_model.pkl")
+                    if os.path.exists("feature_engineered_rf_model.pkl"):
+                        p2 = joblib.load("feature_engineered_rf_model.pkl")
                         fb = analyze_code_features(st.session_state.original_code_text, input_n=input_n, tdp=tdp, cores=cores)
                         vec = legacy_model_vector(fb)
                         p2_pred = float(p2.predict([vec])[0])
-                        st.write(f"Phase‑2 RF prediction: {p2_pred:.6f} J")
+                        st.write(f"Baseline RF prediction: {p2_pred:.6f} J")
                     else:
-                        st.info("No Phase‑2 model (phase2_model.pkl) found in project root.")
+                        st.info("No baseline RF model (feature_engineered_rf_model.pkl) found in project root.")
                 except Exception as exc:
-                    st.warning(f"Failed to compute Phase‑2 prediction: {exc}")
+                    st.warning(f"Failed to compute baseline prediction: {exc}")
 
-                st.markdown("**Phase‑3 AST‑GNN prediction**")
+                st.markdown("**Graph energy model prediction**")
                 if p3 is None:
-                    st.info("Phase‑3 module not importable. Run the Phase‑3 demo or install dependencies.")
+                    st.info("Graph model module not importable. Run the graph model demo or install dependencies.")
                 else:
                     # Attempt to load a saved GNN model if present
-                    gnn_path = "phase3_model.pth"
+                    gnn_path = "graph_energy_model.pth"
                     if not os.path.exists(gnn_path):
-                        st.info("No saved Phase‑3 model found (phase3_model.pth). Run `phase3_ast_gnn.run_phase3_experiment` to train one.")
+                        st.info("No saved graph model found (graph_energy_model.pth). Run `graph_energy_model.run_graph_energy_experiment` to train one.")
                     else:
                         try:
                             device = p3.torch.device("cuda" if p3.torch.cuda.is_available() else "cpu")
@@ -1066,7 +1066,7 @@ def main():
                             sample_graph = example
                             state = p3.torch.load(gnn_path, map_location=device)
                             if "node_type_embedding.weight" not in state:
-                                raise ValueError("Saved Phase-3 model is missing node_type_embedding weights")
+                                raise ValueError("Saved graph model is missing node_type_embedding weights")
                             node_type_vocab_size = int(state["node_type_embedding.weight"].shape[0] - 2)
                             graph_feature_dim = int(sample_graph.graph_features.shape[0])
                             model = p3.ASTGNNRegressor(node_type_vocab_size=node_type_vocab_size, graph_feature_dim=graph_feature_dim)
@@ -1077,9 +1077,9 @@ def main():
                             model.eval()
                             with p3.torch.no_grad():
                                 pred = float(model(batch).cpu().item())
-                            st.write(f"Phase‑3 GNN prediction: {pred:.6f} J")
+                            st.write(f"Graph model prediction: {pred:.6f} J")
                         except Exception as exc:
-                            st.warning(f"Failed to run Phase‑3 model: {exc}")
+                            st.warning(f"Failed to run graph model: {exc}")
 
 
 if __name__ == "__main__":

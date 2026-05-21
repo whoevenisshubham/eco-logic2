@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-import phase2_features
+import feature_engineering
 
 
 def main(csv_path: str = "eco_logic_synthetic_benchmark.csv"):
@@ -31,7 +31,7 @@ def main(csv_path: str = "eco_logic_synthetic_benchmark.csv"):
             code = row.get("source_code") or row.get("source") or row.get("code") or ""
             if not code or not isinstance(code, str):
                 continue
-            lang = phase2_features.detect_language(code)
+            lang = feature_engineering.detect_language(code)
             ext = "py" if lang == "Python" else "cpp"
             fname = f"{sid}.{ext}"
             fpath = out_dir / fname

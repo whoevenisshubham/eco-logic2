@@ -14,23 +14,23 @@ Why it matters: small algorithmic improvements in hot code can reduce CPU time, 
 
 - UI / Orchestration: `app.py` (Streamlit) — receives code input, invokes the LLM/heuristic generator, runs feature extraction, queries ML predictors, optionally measures runtime, computes carbon, and renders a Pareto frontier.
 - LLM wrapper: `groq_client.py` — abstracted interface to call the configured LLM provider.
-- Feature extraction: `phase2_features.py` — Tree‑sitter-based AST parsing and feature engineering; includes a `legacy_model_vector()` that returns the deterministic 9 features required by older RF baselines.
+- Feature extraction: `feature_engineering.py` — Tree‑sitter-based AST parsing and feature engineering; includes a `legacy_model_vector()` that returns the deterministic 9 features required by older RF baselines.
 - Runtime measurement: `runtime_harness.py` — safely compiles/runs C++/Python snippets in a sandboxed harness, times runs, and returns measured runtime_ms. Falls back to proxy runtime predictions when execution is infeasible.
 - Carbon providers: `carbon_providers.py` — adapter pattern to get carbon intensity (gCO2eq/kWh) from various APIs with an offline fallback; used to convert predicted energy (J) → gCO2eq.
-- Phase‑1/2 predictor(s): scikit-learn RandomForest pickles (e.g., `phase1_model.pkl`, `phase2_model.pkl`) — fast legacy predictors that accept a 9-dim feature vector.
-- Phase‑3 AST‑GNN: `phase3_ast_gnn.py` — constructs graph datasets from Tree‑sitter ASTs, trains a GraphSAGE-like encoder and MLP regressor in PyTorch. Produces `phase3_model.pth`.
-- Evaluation scripts: `scripts/eval_refactor_candidates.py` and related scripts perform candidate generation, prediction, measurement, and JSON export for inspection.
-
-**3. Theoretical background**
-
-- Energy prediction: We map program features (e.g., loop depth, memory operations, arithmetic intensity) to an estimated energy use in joules. A regression model (RF or GNN) learns this mapping from labeled runs where we measure runtime and infer energy from measured power or system proxies.
-- Carbon translation: Energy (J) → kWh → gCO2eq via carbon intensity (gCO2eq/kWh) where carbon intensity is provider/sourced from public APIs or offline datasets.
-- AST‑GNN motivation: structural program information is rich — AST nodes and their relations capture control and data-flow structure. GNNs operating on AST-derived graphs can better generalize energy-relevant patterns than flat feature vectors.
-
-**4. Data and labels**
-
+ Baseline predictors: scikit-learn RandomForest pickles (e.g., `baseline_rf_model.pkl`, `feature_engineered_rf_model.pkl`) — fast legacy predictors that accept a 9-dim feature vector.
+ Graph energy model: `graph_energy_model.py` — constructs graph datasets from Tree-sitter ASTs, trains a GraphSAGE-like encoder and MLP regressor in PyTorch. Produces `graph_energy_model.pth`.
+ Generates candidates (LLM + heuristics), extracts features, predicts energy via the baseline RF models, optionally measures runtime via `runtime_harness`, converts to carbon using `carbon_providers`, and writes a JSON report `scripts/eval_refactor_candidates_output.json`.
+ `train_graph_model.sh` or `train_graph_model.py` — possible convenience scripts for distributed runs or scheduled training.
+ Baseline RandomForest:
+ Graph energy model:
+ Train the graph model locally:
+ `predicted_energy_j`: float,         # predicted energy in joules by baseline RF
+ `tests/test_graph_model_load_save.py`: save a small model checkpoint and reload to ensure shapes and `meta` present.
+ Every artifact saving step must include a `meta` dict with: `created_by` (string, e.g., 'graph_model_trainer_v1'), `created_at` (ISO8601 UTC), `git_commit` (short sha if available), and `seed`.
+ # train the graph model (if you have preprocessed data)
+ If a graph-model checkpoint exists, load it and use it for inference; otherwise fall back to the baseline RF.
 - Primary CSV: `eco_logic_synthetic_benchmark.csv` — contains synthetic benchmark entries with code variants and measured runtimes. Used for exploratory analysis and model prototyping.
-- Training artifacts: parquet/cached datasets created by `phase3_ast_gnn.py` preprocessing step hold graph representations and target energy labels. Keep large ones outside Git.
+- Training artifacts: parquet/cached datasets created by `graph_energy_model.py` preprocessing step hold graph representations and target energy labels. Keep large ones outside Git.
 
 **5. Files: complete walkthrough**
 
@@ -41,8 +41,8 @@ Below is a file-by-file description of source files, scripts, and artifacts. Eac
     - Accept code input (text area) or example selection.
     - Generate candidate refactors using the LLM (`groq_client.py`) and local heuristics.
     - Validate LLM outputs with `has_valid_function_body()` to ensure a real algorithmic implementation was returned (not a library-only solution or empty output).
-    - Extract features via `phase2_features.analyze_code_features()`; for backward compatibility calls `legacy_model_vector()` which returns the deterministic 9 features in a fixed order.
-    - Query predictors (`phase2_model.pkl` or `phase3_model.pth`) and display predicted energy and carbon.
+    - Extract features via `feature_engineering.analyze_code_features()`; for backward compatibility calls `legacy_model_vector()` which returns the deterministic 9 features in a fixed order.
+    - Query predictors (`feature_engineered_rf_model.pkl` or `graph_energy_model.pth`) and display predicted energy and carbon.
     - Optionally measure runtime via `runtime_harness.measure_runtime()`; when measured results exist, they replace proxy/runtime predictions in the Pareto chart.
     - Provide UI controls to accept a candidate and (optionally) persist it.
 
@@ -66,7 +66,7 @@ Below is a file-by-file description of source files, scripts, and artifacts. Eac
   - For Python: uses `time.perf_counter()` over many repeated runs to average and reduce noise; isolates runs using subprocess to avoid interpreter state effects.
   - Fallback: if compilation or execution is disallowed by environment, returns `proxy` and a predicted runtime computed from ML predictor or heuristics.
 
-- `phase2_features.py` — Tree‑sitter feature engineering and legacy vector.
+- `feature_engineering.py` — Tree‑sitter feature engineering and legacy vector.
   - Uses `tree_sitter` to parse source code into an AST.
   - Computes features such as: `num_functions`, `avg_cyclomatic_complexity`, `max_loop_depth`, `num_arithmetic_ops`, `num_memory_accesses`, `num_function_calls`, `avg_stmt_length`, `num_conditionals`, `estimated_work_per_loop` (the 9-feature legacy order).
   - Exports:
@@ -74,26 +74,26 @@ Below is a file-by-file description of source files, scripts, and artifacts. Eac
     - `legacy_model_vector(code_text) -> np.ndarray(shape=(9,))` — deterministic 9-feature vector for RF compatibility.
   - Notes: For robustness, there is a non-Tree‑sitter fallback (lightweight regex-based parser) if the environment lacks the pinned `tree-sitter` version.
 
-- `phase3_ast_gnn.py` — AST → graph, dataset, model, training loop.
+- `graph_energy_model.py` — AST → graph, dataset, model, training loop.
   - Main capabilities:
     - `build_graph_from_ast(tree)` — nodes for AST node types, edges for parent-child and next-sibling relationships, node features like node type id, token density, and local metrics (subtree size, depth).
     - PyTorch `Dataset`/`DataLoader` compatible dataset that returns graph objects (node feature tensors, edge lists, global attributes) and regression targets.
     - GNN encoder: multi-layer GraphSAGE-like message passing with ReLU + batchnorm, global pooling (mean + max concatenation), then an MLP regressor head.
     - Training harness supports configurable: learning rate, weight decay, epochs, early stopping, and optional carbon-aware loss weighting.
-  - Checkpointing: saves `phase3_model.pth` containing `state_dict` and metadata (vocab sizes, model args) to enable robust re-loading.
+  - Checkpointing: saves `graph_energy_model.pth` containing `state_dict` and metadata (vocab sizes, model args) to enable robust re-loading.
 
 - `scripts/eval_refactor_candidates.py` — offline evaluation pipeline.
   - Generates candidates (LLM + heuristics), extracts features, predicts energy via Phase‑1/Phase‑2 RF models, optionally measures runtime via `runtime_harness`, converts to carbon using `carbon_providers`, and writes a JSON report `scripts/eval_refactor_candidates_output.json`.
   - Enforces that LLM candidates pass the `has_valid_function_body()` check; otherwise marks them as invalid/failed.
 
 - `scripts/*` — other helper scripts.
-  - `evaluate_phase3_saved.py` — loads `phase3_model.pth`, builds test graphs, and reports MAE/RMSE vs `phase2_model.pkl` and a random baseline.
+  - `evaluate_saved_graph_model.py` — loads `graph_energy_model.pth`, builds test graphs, and reports MAE/RMSE vs `feature_engineered_rf_model.pkl` and a random baseline.
   - `train_phase3.sh` or `train_phase3.py` — possible convenience scripts for distributed runs or scheduled training.
 
 - `eco_logic_synthetic_benchmark.csv` — synthetic benchmark dataset used for prototyping and model validation.
 
 - Model artifacts (not always committed):
-  - `phase1_model.pkl`, `phase2_model.pkl`, `phase3_model.pth` — store in a model store or release if large.
+  - `baseline_rf_model.pkl`, `feature_engineered_rf_model.pkl`, `graph_energy_model.pth` — store in a model store or release if large.
 
 **6. Validation and safety checks**
 
@@ -143,16 +143,16 @@ streamlit run app.py
 - Train Phase‑3 locally:
 
 ```bash
-python phase3_ast_gnn.py --data-file data/train_dataset.parquet --epochs 40 --save-path phase3_model.pth
+python graph_energy_model.py --data-file data/train_dataset.parquet --epochs 40 --save-path graph_energy_model.pth
 ```
 
 **11. FAQ and troubleshooting**
 
-- Q: My `phase3_model.pth` won't load — mismatch in vocab sizes.
+- Q: My `graph_energy_model.pth` won't load — mismatch in vocab sizes.
   - A: The loader reads `state_dict` metadata and reconstructs the architecture. If you changed `node_type_vocab_size`, rebuild the vocab or retrain.
 
 - Q: Tree‑sitter parse fails in my environment.
-  - A: The repo pins `tree-sitter<0.22.0`; install the pinned version or use the regex fallback in `phase2_features.py`.
+  - A: The repo pins `tree-sitter<0.22.0`; install the pinned version or use the regex fallback in `feature_engineering.py`.
 
 - Q: Measurements inconsistent across runs.
   - A: Use the harness's repeated-run averaging and disable background processes; run in isolated env or docker container for better reproducibility.
@@ -190,14 +190,14 @@ Repository layout (paths are workspace-root relative):
 - `groq_client.py` — LLM wrapper.
 - `carbon_providers.py` — providers and adapters.
 - `runtime_harness.py` — measurement harness.
-- `phase2_features.py` — Tree-sitter feature extractor and `legacy_model_vector()`
-- `phase3_ast_gnn.py` — graph builder, dataset, model, training.
+- `feature_engineering.py` — Tree-sitter feature extractor and `legacy_model_vector()`
+- `graph_energy_model.py` — graph builder, dataset, model, training.
 - `scripts/eval_refactor_candidates.py` — candidate generator & evaluator.
 - `scripts/eval_refactor_candidates_output.json` — example output (JSON schema below).
-- `evaluate_phase3_saved.py` — loader & evaluator for `phase3_model.pth`.
+- `evaluate_saved_graph_model.py` — loader & evaluator for `graph_energy_model.pth`.
 - `eco_logic_synthetic_benchmark.csv` — CSV dataset with columns described below.
-- `phase1_model.pkl`, `phase2_model.pkl` — scikit-learn pickled RandomForest objects (serialized via `joblib.dump(model)`).
-- `phase3_model.pth` — PyTorch checkpoint saved with `torch.save({'state_dict': model.state_dict(), 'meta': {...}}, path)`.
+- `baseline_rf_model.pkl`, `feature_engineered_rf_model.pkl` — scikit-learn pickled RandomForest objects (serialized via `joblib.dump(model)`).
+- `graph_energy_model.pth` — PyTorch checkpoint saved with `torch.save({'state_dict': model.state_dict(), 'meta': {...}}, path)`.
 
 Language/runtime constraints and pinned versions
 ----------------------------------------------
@@ -216,7 +216,7 @@ File-level deterministic contract
 
 All modules expose the following functions/classes with the exact signatures below (types indicated in comments):
 
-1) phase2_features.py
+1) feature_engineering.py
 
 def analyze_code_features(code_text: str, language: str = 'cpp') -> dict:
     """Return a rich feature dict for `code_text` in `language`.
@@ -260,7 +260,7 @@ def legacy_model_vector(code_text: str, language: str = 'cpp') -> list:
       - Deterministic mapping from input text to numbers
     """
 
-Implementation details for `phase2_features.py` (reproducible algorithm):
+Implementation details for `feature_engineering.py` (reproducible algorithm):
 
 - Primary parser: Tree‑sitter. Build a language parser for `cpp` using `Language` and `Parser` from `tree_sitter`:
 
@@ -309,7 +309,7 @@ def measure_runtime(code_text: str, language: str, repetitions: int = 20, time_l
     """
 
 Proxy runtime computation (if measured runs cannot be executed):
-- Call `legacy_model_vector()` and pass the vector to the loaded RF model (e.g., `phase2_model.pkl`) to get a predicted energy (J) and convert to runtime_ms by dividing by an assumed average power (e.g., 15.0 Watts). This mapping MUST be used consistently in the repo: `assumed_power_watts = 15.0`.
+- Call `legacy_model_vector()` and pass the vector to the loaded RF model (e.g., `feature_engineered_rf_model.pkl`) to get a predicted energy (J) and convert to runtime_ms by dividing by an assumed average power (e.g., 15.0 Watts). This mapping MUST be used consistently in the repo: `assumed_power_watts = 15.0`.
 
 3) carbon_providers.py reproducible contract
 
@@ -382,7 +382,7 @@ Example conservative constants used in codebase (must be reproduced):
 - `ASSUMED_POWER_WATTS = 15.0`  # used to convert energy (J) -> runtime_ms when proxying
 - `JOULES_PER_KWH = 3.6e6`
 
-6) phase3_ast_gnn.py exact model spec
+6) graph_energy_model.py exact model spec
 
 Public classes and functions:
 
@@ -434,9 +434,9 @@ Training loop (deterministic essentials):
         }
       }
 
-7) evaluate_phase3_saved.py expected behavior
+7) evaluate_saved_graph_model.py expected behavior
 
-- Load `phase3_model.pth` using `torch.load(path, map_location='cpu')`.
+- Load `graph_energy_model.pth` using `torch.load(path, map_location='cpu')`.
 - Inspect `meta` key and reinstantiate `ASTGNNRegressor` with matching args.
 - Load test graphs with same preprocessing and compute predictions; report MAE and RMSE vs ground truth energy_j.
 
@@ -482,7 +482,7 @@ Training loop (deterministic essentials):
 
 11) Unit tests and acceptance tests expected in `tests/` (not committed here but required to reproduce behavior)
 
-- tests/test_phase2_features.py: assert `legacy_model_vector(sample_code)` returns expected 9-length vector for given sample code string (provide 3 sample fixtures: tiny loop, nested loops, arithmetic-heavy function).
+- tests/test_feature_engineering.py: assert `legacy_model_vector(sample_code)` returns expected 9-length vector for given sample code string (provide 3 sample fixtures: tiny loop, nested loops, arithmetic-heavy function).
 - tests/test_runtime_harness.py: run `measure_runtime` on a trivial C++ program that just loops 10000 times and assert `runtime_mode` in {'measured','proxy'} and `runtime_ms` > 0 when measured.
 - tests/test_phase3_load_save.py: save a small model checkpoint and reload to ensure shapes and `meta` present.
 
@@ -514,7 +514,7 @@ def legacy_model_vector(code_text, language='cpp'):
 - energy prediction using RF:
 
 from joblib import load
-rf = load('phase2_model.pkl')
+rf = load('feature_engineered_rf_model.pkl')
 def predict_energy_from_legacy(vec9):
     import numpy as np
     x = np.array(vec9, dtype=float).reshape(1, -1)
@@ -549,10 +549,10 @@ PYTHONPATH=. python scripts/eval_refactor_candidates.py
 streamlit run app.py
 
 # train phase3 model (if you have preprocessed data)
-python phase3_ast_gnn.py --data-file data/graphs_train.parquet --epochs 40 --save-path phase3_model.pth
+python graph_energy_model.py --data-file data/graphs_train.parquet --epochs 40 --save-path graph_energy_model.pth
 
 # evaluate saved model
-python evaluate_phase3_saved.py --model-path phase3_model.pth
+python evaluate_saved_graph_model.py --model-path graph_energy_model.pth
 ```
 
 17) Closing notes
@@ -561,7 +561,7 @@ This appendix is intentionally prescriptive; it supplies exact function names, s
 
 - Generate the `requirements.txt` pinned to exact versions used in my runs.
 - Implement the test fixtures and add `tests/` with the three unit tests above.
-- Produce `scripts/build_tree_sitter_parsers.py` to compile the language bindings used by `phase2_features.py`.
+- Produce `scripts/build_tree_sitter_parsers.py` to compile the language bindings used by `feature_engineering.py`.
 
 Tell me which of those you want next and I'll add them to the repo.
 
@@ -637,7 +637,7 @@ The RF baseline must keep backward compatibility with the original 9-feature pip
 
 22) Saved model loading rules
 
-When loading `phase3_model.pth`:
+When loading `graph_energy_model.pth`:
 
 - Load the checkpoint on CPU first.
 - Read `checkpoint['meta']` before model construction.
@@ -658,13 +658,13 @@ The benchmark CSV and training artifacts are treated as immutable input data. Th
 
 If an LLM is reconstructing the project from scratch, generate files in this order to avoid import-cycle failures:
 
-1. `phase2_features.py`
+1. `feature_engineering.py`
 2. `carbon_providers.py`
 3. `runtime_harness.py`
 4. `groq_client.py`
-5. `phase3_ast_gnn.py`
+5. `graph_energy_model.py`
 6. `scripts/eval_refactor_candidates.py`
-7. `evaluate_phase3_saved.py`
+7. `evaluate_saved_graph_model.py`
 8. `app.py`
 
 Reason: the UI imports the helpers, and the scripts depend on the feature extractor and runtime harness.
@@ -699,5 +699,6 @@ To reproduce this project, ensure the generated code has:
 - RF baseline support and AST-GNN support.
 - Strict LLM prompt and post-validation.
 - Pareto frontier rendering in the UI.
+
 
 

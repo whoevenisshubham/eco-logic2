@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-import phase3_ast_gnn as p3
+import graph_energy_model as p3
 
 
 def _load_saved_model(model_path: str, model: torch.nn.Module, device: torch.device) -> None:
@@ -18,7 +18,7 @@ def _load_saved_model(model_path: str, model: torch.nn.Module, device: torch.dev
         model.load_state_dict(state)
 
 
-def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str = "phase3_model.pth", baseline_model: str = "phase2_model.pkl", seed: int = 42):
+def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str = "graph_energy_model.pth", baseline_model: str = "feature_engineered_rf_model.pkl", seed: int = 42):
     df = pd.read_csv(csv_path)
     if "snippet_id" not in df.columns:
         df = df.reset_index().rename(columns={"index": "snippet_id"})
@@ -47,15 +47,15 @@ def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str =
             _load_saved_model(saved_model, model, device)
             model.to(device)
             metrics = p3._evaluate_model(model, test_loader, device)
-            print("Phase‑3 saved model metrics:")
+            print("Graph model saved metrics:")
             print(metrics)
 
-        # baseline evaluation (phase2_model.pkl)
+        # baseline evaluation (feature_engineered_rf_model.pkl)
         if not Path(baseline_model).exists():
             print(f"Baseline model not found: {baseline_model}")
         else:
-            baseline_metrics = p3.evaluate_baseline_phase1(baseline_model, test_df)
-            print("Phase‑2 baseline metrics (phase2_model.pkl):")
+            baseline_metrics = p3.evaluate_baseline_model(baseline_model, test_df)
+            print("Baseline metrics (feature_engineered_rf_model.pkl):")
             print(baseline_metrics)
 
     finally:
@@ -67,10 +67,10 @@ def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str =
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate a saved Phase 3 AST-GNN model")
+    parser = argparse.ArgumentParser(description="Evaluate a saved graph energy model")
     parser.add_argument("--csv", "--data-file", dest="csv_path", default="eco_logic_synthetic_benchmark.csv")
-    parser.add_argument("--saved-model", default="phase3_model.pth")
-    parser.add_argument("--baseline-model", default="phase2_model.pkl")
+    parser.add_argument("--saved-model", default="graph_energy_model.pth")
+    parser.add_argument("--baseline-model", default="feature_engineered_rf_model.pkl")
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
     main(csv_path=args.csv_path, saved_model=args.saved_model, baseline_model=args.baseline_model, seed=args.seed)

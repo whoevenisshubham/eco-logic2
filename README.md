@@ -1,6 +1,6 @@
 # Freshstart — Energy-aware Refactor Agent
 
-This repository implements a closed-loop refactoring agent that: parses code, extracts features, predicts energy use, measures runtime when possible, converts energy to carbon, and visualizes an Energy–Time Pareto frontier. It includes a RandomForest Phase‑1/Phase‑2 baseline and a Phase‑3 AST‑GNN regressor.
+This repository implements a closed-loop refactoring agent that: parses code, extracts features, predicts energy use, measures runtime when possible, converts energy to carbon, and visualizes an Energy–Time Pareto frontier. It includes a baseline RandomForest predictor and a graph-based energy regressor.
 
 This README covers how to set up, run, test, and push changes to Git.
 
@@ -40,7 +40,7 @@ From the repository root:
 streamlit run app.py
 ```
 
-The UI shows: input code, generated LLM refactor candidates, heuristic candidates, predicted energy (J), predicted carbon (gCO2eq), and an interactive Pareto frontier. Measured runtimes (Phase‑1.5) replace proxy runtime when available.
+The UI shows: input code, generated LLM refactor candidates, heuristic candidates, predicted energy (J), predicted carbon (gCO2eq), and an interactive Pareto frontier. Measured runtimes replace proxy runtime when available.
 
 ## Scripts and common commands
 
@@ -50,22 +50,22 @@ The UI shows: input code, generated LLM refactor candidates, heuristic candidate
 PYTHONPATH=. python scripts/eval_refactor_candidates.py
 ```
 
-- Train Phase‑3 AST‑GNN model (example):
+- Train the graph energy model (example):
 
 ```bash
-python phase3_ast_gnn.py --csv eco_logic_synthetic_benchmark.csv --epochs 30 --save-path phase3_model.pth
+python graph_energy_model.py --csv eco_logic_synthetic_benchmark.csv --epochs 30 --save-path graph_energy_model.pth
 ```
 
-- Evaluate saved Phase‑3 model:
+- Evaluate the saved graph energy model:
 
 ```bash
-python evaluate_phase3_saved.py --saved-model phase3_model.pth --baseline-model phase2_model.pkl --csv eco_logic_synthetic_benchmark.csv
+python evaluate_saved_graph_model.py --saved-model graph_energy_model.pth --baseline-model feature_engineered_rf_model.pkl --csv eco_logic_synthetic_benchmark.csv
 ```
 
 ## Models and artifacts
 
-- `phase1_model.pkl`, `phase2_model.pkl` — scikit-learn RandomForest baselines (legacy 9‑feature compatibility).
-- `phase3_model.pth` — PyTorch AST‑GNN regressor checkpoint.
+- `baseline_rf_model.pkl`, `feature_engineered_rf_model.pkl` — scikit-learn RandomForest predictors with 9-feature compatibility.
+- `graph_energy_model.pth` — PyTorch graph energy regressor checkpoint.
 - `eco_logic_synthetic_benchmark.csv` — benchmark dataset used for initial prototyping.
 
 Keep large artifacts out of Git (add them to `.gitignore`) and store model checkpoints in a separate release storage if required.
@@ -101,7 +101,7 @@ If you need to squash or rebase before merging into `main`, use your project's P
 
 ## Tests & verification
 
-Run the evaluation script and `evaluate_phase3_saved.py` to sanity check models.
+Run the evaluation script and `evaluate_saved_graph_model.py` to sanity check models.
 
 Optional quick smoke tests
 
@@ -120,3 +120,4 @@ Add your preferred license in `LICENSE` and contribution guide in `CONTRIBUTING.
 
 ---
 If you'd like, I can also add a `requirements.txt`, `CONTRIBUTING.md`, or a small test that verifies the `early_exit_bubble` heuristic outperforms the original for the provided benchmark.
+

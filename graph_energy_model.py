@@ -19,7 +19,7 @@ from sklearn.model_selection import GroupShuffleSplit
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-from phase2_features import analyze_code_features, detect_language
+from feature_engineering import analyze_code_features, detect_language
 
 try:
     from tree_sitter_languages import get_parser
@@ -554,18 +554,18 @@ def _build_loaders(train_df: pd.DataFrame, val_df: pd.DataFrame, test_df: pd.Dat
 def _materialize_csv(df: pd.DataFrame, limit: Optional[int]) -> str:
     if limit is not None:
         df = df.head(int(limit)).copy()
-    temp_path = Path(os.environ.get("TEMP", ".")) / f"phase3_split_{os.getpid()}_{random.randint(1000, 9999)}.csv"
+    temp_path = Path(os.environ.get("TEMP", ".")) / f"graph_model_split_{os.getpid()}_{random.randint(1000, 9999)}.csv"
     df.to_csv(temp_path, index=False)
     return str(temp_path)
 
 
-def evaluate_baseline_phase1(model_path: str, test_df: pd.DataFrame) -> Dict[str, float]:
+def evaluate_baseline_model(model_path: str, test_df: pd.DataFrame) -> Dict[str, float]:
     if not Path(model_path).exists():
         return {"mse": float("nan"), "mae": float("nan"), "r2": float("nan")}
     baseline = joblib.load(model_path)
     preds: List[float] = []
     targets: List[float] = []
-    from phase2_features import legacy_model_vector
+    from feature_engineering import legacy_model_vector
 
     for _, row in test_df.iterrows():
         bundle = analyze_code_features(
@@ -585,7 +585,7 @@ def evaluate_baseline_phase1(model_path: str, test_df: pd.DataFrame) -> Dict[str
     }
 
 
-def run_phase3_experiment(csv_path: str, model_path: str = "phase1_model.pkl", epochs: int = 12, limit: Optional[int] = None, include_data_flow: bool = True, include_cache_locality: bool = True, batch_size: int = 8, seed: int = 42, save_path: Optional[str] = None, carbon_aware_objective: bool = False) -> Dict[str, Dict[str, float]]:
+def run_graph_energy_experiment(csv_path: str, model_path: str = "baseline_rf_model.pkl", epochs: int = 12, limit: Optional[int] = None, include_data_flow: bool = True, include_cache_locality: bool = True, batch_size: int = 8, seed: int = 42, save_path: Optional[str] = None, carbon_aware_objective: bool = False) -> Dict[str, Dict[str, float]]:
     _seed_everything(seed)
     df = pd.read_csv(csv_path)
     if limit is not None:
@@ -650,7 +650,7 @@ def run_phase3_experiment(csv_path: str, model_path: str = "phase1_model.pkl", e
             except Exception:
                 pass
         test_metrics = _evaluate_model(model, test_loader, device)
-        baseline_metrics = evaluate_baseline_phase1(model_path, test_df)
+        baseline_metrics = evaluate_baseline_model(model_path, test_df)
         return {
             "gnn_val": val_metrics,
             "gnn_test": test_metrics,
@@ -668,8 +668,8 @@ def run_phase3_experiment(csv_path: str, model_path: str = "phase1_model.pkl", e
                 pass
 
 
-def run_phase3_ablation_suite(csv_path: str, model_path: str = "phase1_model.pkl", epochs: int = 8, limit: Optional[int] = 240, batch_size: int = 8, seed: int = 42) -> Dict[str, Dict[str, Dict[str, float]]]:
-    base = run_phase3_experiment(
+def run_graph_energy_ablation_suite(csv_path: str, model_path: str = "baseline_rf_model.pkl", epochs: int = 8, limit: Optional[int] = 240, batch_size: int = 8, seed: int = 42) -> Dict[str, Dict[str, Dict[str, float]]]:
+    base = run_graph_energy_experiment(
         csv_path=csv_path,
         model_path=model_path,
         epochs=epochs,
@@ -680,7 +680,7 @@ def run_phase3_ablation_suite(csv_path: str, model_path: str = "phase1_model.pkl
         seed=seed,
         carbon_aware_objective=False,
     )
-    no_data_flow = run_phase3_experiment(
+    no_data_flow = run_graph_energy_experiment(
         csv_path=csv_path,
         model_path=model_path,
         epochs=epochs,
@@ -691,7 +691,7 @@ def run_phase3_ablation_suite(csv_path: str, model_path: str = "phase1_model.pkl
         seed=seed,
         carbon_aware_objective=False,
     )
-    no_cache = run_phase3_experiment(
+    no_cache = run_graph_energy_experiment(
         csv_path=csv_path,
         model_path=model_path,
         epochs=epochs,
@@ -702,7 +702,7 @@ def run_phase3_ablation_suite(csv_path: str, model_path: str = "phase1_model.pkl
         seed=seed,
         carbon_aware_objective=False,
     )
-    carbon_obj = run_phase3_experiment(
+    carbon_obj = run_graph_energy_experiment(
         csv_path=csv_path,
         model_path=model_path,
         epochs=epochs,
@@ -722,11 +722,11 @@ def run_phase3_ablation_suite(csv_path: str, model_path: str = "phase1_model.pkl
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Phase 3 AST-GNN training and evaluation")
+    parser = argparse.ArgumentParser(description="Graph energy model training and evaluation")
     parser.add_argument("--csv", "--data-file", dest="csv", default="eco_logic_synthetic_benchmark.csv")
-    parser.add_argument("--model-path", default="phase1_model.pkl")
+    parser.add_argument("--model-path", default="baseline_rf_model.pkl")
     parser.add_argument("--epochs", type=int, default=12)
-    parser.add_argument("--save-path", default="phase3_model.pth")
+    parser.add_argument("--save-path", default="graph_energy_model.pth")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--no-data-flow", action="store_true")
     parser.add_argument("--no-cache-locality", action="store_true")
@@ -739,7 +739,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_arg_parser().parse_args()
     if args.ablations:
-        results = run_phase3_ablation_suite(
+        results = run_graph_energy_ablation_suite(
             csv_path=args.csv,
             model_path=args.model_path,
             epochs=args.epochs,
@@ -749,7 +749,7 @@ def main() -> None:
         print(results)
         return
 
-    results = run_phase3_experiment(
+    results = run_graph_energy_experiment(
         csv_path=args.csv,
         model_path=args.model_path,
         epochs=args.epochs,

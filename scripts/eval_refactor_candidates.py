@@ -11,7 +11,7 @@ import load_env
 load_env.load()
 
 from groq_client import generate_refactor
-from phase2_features import analyze_code_features, legacy_model_vector
+from feature_engineering import analyze_code_features, legacy_model_vector
 from runtime_harness import measure_runtime
 
 
@@ -59,7 +59,7 @@ PROMPT = (
     + ORIGINAL_CODE
 )
 
-MODEL_PATH = Path("phase1_model.pkl")
+MODEL_PATH = Path("baseline_rf_model.pkl")
 
 
 def extract_fenced(code_text: str) -> str:

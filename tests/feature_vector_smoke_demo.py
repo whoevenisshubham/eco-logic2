@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from phase2_features import analyze_code_features, legacy_model_vector
+from feature_engineering import analyze_code_features, legacy_model_vector
 
 
 SNIPPETS = {
@@ -68,7 +68,7 @@ def predict_energy(model, code_text, input_n=1024.0, tdp=65.0, cores=8.0):
 
 
 def main():
-    model_path = ROOT / "phase1_model.pkl"
+    model_path = ROOT / "baseline_rf_model.pkl"
     model = joblib.load(model_path)
 
     for name, code in SNIPPETS.items():
@@ -76,7 +76,7 @@ def main():
         print(f"[{name}] pred={pred:.6f}J backend={bundle.get('parser_backend')}")
         assert pred >= 0.0
 
-    print("Phase 1 deterministic 9-feature smoke checks passed.")
+    print("Deterministic 9-feature smoke checks passed.")
 
 
 if __name__ == "__main__":
