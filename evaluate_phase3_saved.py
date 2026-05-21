@@ -1,0 +1,63 @@
+from __future__ import annotations
+
+import os
+import random
+from pathlib import Path
+import pandas as pd
+import torch
+from torch.utils.data import DataLoader
+
+import phase3_ast_gnn as p3
+
+
+def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str = "phase3_model.pth", baseline_model: str = "phase2_model.pkl", seed: int = 42):
+    df = pd.read_csv(csv_path)
+    if "snippet_id" not in df.columns:
+        df = df.reset_index().rename(columns={"index": "snippet_id"})
+    train_df, val_df, test_df = p3.split_by_snippet_id(df, seed=seed)
+    train_path = p3._materialize_csv(train_df, None)
+    val_path = p3._materialize_csv(val_df, None)
+    test_path = p3._materialize_csv(test_df, None)
+
+    try:
+        shared_builder = p3.ASTGraphBuilder()
+        train_ds = p3.ASTGraphDataset(train_path, builder=shared_builder)
+        val_ds = p3.ASTGraphDataset(val_path, builder=shared_builder)
+        test_ds = p3.ASTGraphDataset(test_path, builder=shared_builder)
+
+        batch_size = 8
+        test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, collate_fn=p3.collate_graphs)
+
+        # construct model with vocab sizes discovered by builder
+        sample = train_ds[0]
+        model = p3.ASTGNNRegressor(node_type_vocab_size=len(train_ds.builder._node_type_vocab), graph_feature_dim=sample.graph_features.shape[0])
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        if not Path(saved_model).exists():
+            print(f"Saved model not found: {saved_model}")
+        else:
+            state = torch.load(saved_model, map_location=device)
+            model.load_state_dict(state)
+            model.to(device)
+            metrics = p3._evaluate_model(model, test_loader, device)
+            print("Phase‑3 saved model metrics:")
+            print(metrics)
+
+        # baseline evaluation (phase2_model.pkl)
+        if not Path(baseline_model).exists():
+            print(f"Baseline model not found: {baseline_model}")
+        else:
+            baseline_metrics = p3.evaluate_baseline_phase1(baseline_model, test_df)
+            print("Phase‑2 baseline metrics (phase2_model.pkl):")
+            print(baseline_metrics)
+
+    finally:
+        for f in [train_path, val_path, test_path]:
+            try:
+                Path(f).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+
+if __name__ == "__main__":
+    main()

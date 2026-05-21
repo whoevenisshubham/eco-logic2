@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+plotly
+requests
+python-dotenv
+scikit-learn
+joblib
+tree-sitter<0.22.0
+tree-sitter-languages
+torch

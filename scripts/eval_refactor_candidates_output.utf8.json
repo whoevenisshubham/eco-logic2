@@ -1,0 +1,29 @@
+﻿{
+  "successful": [
+    {
+      "label": "std_sort",
+      "energy_j": 0.0024940972757828443,
+      "runtime_ms": 47.66254545454546,
+      "runtime_mode": "proxy"
+    },
+    {
+      "label": "original",
+      "energy_j": 0.0032351306917105566,
+      "runtime_ms": 47.66254545454546,
+      "runtime_mode": "proxy"
+    },
+    {
+      "label": "llm_refactor",
+      "energy_j": 0.0032351306917105566,
+      "runtime_ms": 47.66254545454546,
+      "runtime_mode": "proxy"
+    },
+    {
+      "label": "early_exit_bubble",
+      "energy_j": 0.0032351306917105566,
+      "runtime_ms": 0.3442,
+      "runtime_mode": "measured"
+    }
+  ],
+  "failed": []
+}
