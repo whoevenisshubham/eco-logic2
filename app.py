@@ -112,6 +112,246 @@ def init_session_state():
             st.session_state[key] = value
 
 
+def inject_dashboard_styles():
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.10), transparent 28%),
+                radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 24%),
+                radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.08), transparent 24%),
+                linear-gradient(180deg, #0b1220 0%, #111827 46%, #0f172a 100%);
+            color: #e5eefb;
+        }
+
+        .block-container {
+            padding-top: 1.5rem;
+            padding-bottom: 2.5rem;
+        }
+
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+            border-right: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        [data-testid="stSidebar"] * {
+            color: #dbe7f5;
+        }
+
+        [data-testid="stSidebar"] .stSelectbox,
+        [data-testid="stSidebar"] .stNumberInput,
+        [data-testid="stSidebar"] .stTextInput,
+        [data-testid="stSidebar"] .stSlider {
+            color: #dbe7f5;
+        }
+
+        [data-testid="stSidebar"] .stExpander {
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        [data-testid="stSidebar"] .stExpander details {
+            background: transparent;
+        }
+
+        .hero-card,
+        .section-card {
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(15, 23, 42, 0.94));
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 22px;
+            box-shadow: 0 16px 34px rgba(2, 6, 23, 0.35);
+        }
+
+        .hero-card {
+            padding: 1.35rem 1.4rem 1.1rem 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.2rem;
+            color: #f8fafc;
+        }
+
+        .hero-subtitle {
+            font-size: 0.96rem;
+            color: #cbd5e1;
+            margin-bottom: 0.85rem;
+        }
+
+        [data-testid="stMetric"] {
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 18px;
+            padding: 0.8rem 0.9rem;
+            box-shadow: 0 10px 22px rgba(2, 6, 23, 0.25);
+        }
+
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.45rem;
+            background: rgba(15, 23, 42, 0.86);
+            padding: 0.45rem;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 999px;
+            padding: 0.55rem 1rem;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .stTabs [aria-selected="true"] {
+            background: linear-gradient(135deg, #2563eb 0%, #0f766e 100%);
+            color: #ffffff;
+        }
+
+        div[data-testid="stExpander"] {
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(15, 23, 42, 0.92);
+        }
+
+        .stCodeBlock {
+            border-radius: 16px;
+        }
+
+        .compact-note {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        .stButton > button,
+        .stDownloadButton > button {
+            border-radius: 14px;
+            font-weight: 700;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
+        }
+
+        .stButton > button[kind="primary"],
+        button[kind="primary"] {
+            background: linear-gradient(135deg, #2563eb 0%, #0f766e 100%);
+            border: 0;
+            color: #ffffff;
+        }
+
+        .stButton > button:not([kind="primary"]),
+        .stDownloadButton > button {
+            background: rgba(15, 23, 42, 0.9);
+            color: #e5eefb;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+        }
+
+        .stTextInput input,
+        .stNumberInput input,
+        textarea {
+            background: rgba(15, 23, 42, 0.9) !important;
+            color: #e5eefb !important;
+            border-color: rgba(148, 163, 184, 0.28) !important;
+        }
+
+        .stTextInput input::placeholder,
+        textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+
+        [data-testid="stSidebar"] .stTextInput input,
+        [data-testid="stSidebar"] .stNumberInput input,
+        [data-testid="stSidebar"] textarea {
+            background: rgba(15, 23, 42, 0.9) !important;
+            color: #e5eefb !important;
+            border-color: rgba(148, 163, 184, 0.24) !important;
+        }
+
+        [data-testid="stSidebar"] .stTextInput input::placeholder,
+        [data-testid="stSidebar"] textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] .st-bf,
+        [data-testid="stSidebar"] .st-c8,
+        [data-testid="stSidebar"] .st-c9 {
+            color: #cbd5e1 !important;
+        }
+
+        [data-testid="stSidebar"] .stMarkdown,
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] span {
+            color: #dbe7f5;
+        }
+
+        .stCodeBlock {
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .stMetricLabel,
+        .stMetricDelta,
+        .stMetricValue {
+            color: #e5eefb !important;
+        }
+
+        .stSubheader,
+        .stMarkdown,
+        .stCaption,
+        .stWrite,
+        p,
+        li {
+            color: inherit;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_badges(items: List[str]) -> None:
+    return
+
+
+def render_value_card(title: str, value: str, help_text: str) -> None:
+    st.markdown(
+        f"""
+        <div class='section-card' style='padding:1rem 1rem 0.95rem 1rem; height:100%;'>
+            <div style='font-size:0.76rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8;'>
+                {title}
+            </div>
+            <div style='font-size:1.38rem; font-weight:800; margin-top:0.35rem; color:#f8fafc;'>
+                {value}
+            </div>
+            <div class='compact-note' style='color:#cbd5e1;'>{help_text}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_kpi_card(title: str, value: str, delta_text: str, accent: str = "#ef4444") -> None:
+    st.markdown(
+        f"""
+        <div class='section-card' style='padding:0.95rem 1rem 0.9rem 1rem; height:100%;'>
+            <div style='height:4px; border-radius:999px; background:{accent}; margin-bottom:0.85rem;'></div>
+            <div style='font-size:0.76rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8;'>
+                {title}
+            </div>
+            <div style='font-size:1.55rem; font-weight:850; margin-top:0.28rem; color:#f8fafc; line-height:1.1;'>
+                {value}
+            </div>
+            <div class='compact-note' style='margin-top:0.32rem; color:#cbd5e1;'>{delta_text}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 class ASTNode:
     def __init__(self, node_type, expression, line_no, indentation):
         self.node_type = node_type
@@ -546,13 +786,9 @@ def run_closed_loop(model, original_code, llm_output, input_n, tdp, cores, max_r
 
 def main():
     init_session_state()
+    inject_dashboard_styles()
     model, model_name = load_model()
     dataset, dataset_name = load_dataset()
-
-    st.title("Cool Ecologic: Code Refactor Studio")
-    st.caption(
-        "Closed-loop refactoring agent + carbon translation + energy-time Pareto frontier"
-    )
 
     if model is None:
         st.error("No model file found. Add baseline_rf_model.pkl in the project root.")
@@ -562,46 +798,71 @@ def main():
         st.error("No benchmark dataset found. Add eco_logic_synthetic_benchmark.csv.")
         st.stop()
 
-    st.sidebar.header("Runtime Settings")
-    input_n = st.sidebar.number_input("Input scale N", min_value=1, value=10000, step=1)
-    tdp = st.sidebar.number_input("Hardware TDP (W)", min_value=1.0, value=45.0, step=1.0)
-    cores = st.sidebar.number_input("CPU cores", min_value=1, value=8, step=1)
-    max_rounds = st.sidebar.slider("Max agent rounds", min_value=1, max_value=5, value=3)
+    st.sidebar.markdown("### Controls")
+    st.sidebar.caption("Grouped controls keep the sidebar compact.")
 
-    st.sidebar.subheader("Carbon Telemetry")
-    provider_label = st.sidebar.selectbox(
-        "Carbon provider",
-        ["Electricity Maps", "WattTime", "Offline fallback"],
-        index=0,
-    )
-    provider_name = {
-        "Electricity Maps": "electricity_maps",
-        "WattTime": "watttime",
-        "Offline fallback": "offline",
-    }[provider_label]
+    with st.sidebar.expander("Run profile", expanded=True):
+        input_n = st.number_input("Input scale N", min_value=1, value=10000, step=1)
+        tdp = st.number_input("Hardware TDP (W)", min_value=1.0, value=45.0, step=1.0)
+        cores = st.number_input("CPU cores", min_value=1, value=8, step=1)
+        max_rounds = st.slider("Max agent rounds", min_value=1, max_value=5, value=3)
+        objective_text = st.text_input("Optimization objective", value="reduce energy")
+        auto_xai = st.checkbox("Auto Groq explanation after run", value=st.session_state.auto_xai_groq)
+        st.session_state.auto_xai_groq = auto_xai
 
-    st.sidebar.caption("Default Maharashtra zone code: IN-WE (configurable)")
-    electricity_maps_zone = st.sidebar.text_input("Electricity Maps zone", value=os.getenv("ELECTRICITY_MAPS_ZONE", DEFAULT_MAHARASHTRA_ZONE))
-    electricity_maps_key = st.sidebar.text_input(
-        "Electricity Maps API key",
-        value=os.getenv("ELECTRICITY_MAPS_API_KEY", ""),
-        type="password",
-    )
-    watttime_token = st.sidebar.text_input(
-        "WattTime bearer token",
-        value=os.getenv("WATTTIME_TOKEN", ""),
-        type="password",
-    )
-    watttime_ba = st.sidebar.text_input(
-        "WattTime BA code",
-        value=os.getenv("WATTTIME_BA", "CAISO_NORTH"),
-    )
-    offline_intensity = st.sidebar.number_input(
-        "Offline intensity (gCO2eq/kWh)",
-        min_value=1.0,
-        value=float(os.getenv("OFFLINE_GRID_INTENSITY", DEFAULT_OFFLINE_INTENSITY)),
-        step=1.0,
-    )
+    with st.sidebar.expander("Carbon telemetry", expanded=False):
+        provider_label = st.selectbox(
+            "Carbon provider",
+            ["Electricity Maps", "WattTime", "Offline fallback"],
+            index=0,
+        )
+        provider_name = {
+            "Electricity Maps": "electricity_maps",
+            "WattTime": "watttime",
+            "Offline fallback": "offline",
+        }[provider_label]
+
+        st.caption("Default Maharashtra zone code: IN-WE (configurable)")
+        electricity_maps_zone = st.text_input(
+            "Electricity Maps zone",
+            value=os.getenv("ELECTRICITY_MAPS_ZONE", DEFAULT_MAHARASHTRA_ZONE),
+        )
+        electricity_maps_key = st.text_input(
+            "Electricity Maps API key",
+            value=os.getenv("ELECTRICITY_MAPS_API_KEY", ""),
+            type="password",
+        )
+        watttime_token = st.text_input(
+            "WattTime bearer token",
+            value=os.getenv("WATTTIME_TOKEN", ""),
+            type="password",
+        )
+        watttime_ba = st.text_input(
+            "WattTime BA code",
+            value=os.getenv("WATTTIME_BA", "CAISO_NORTH"),
+        )
+        offline_intensity = st.number_input(
+            "Offline intensity (gCO2eq/kWh)",
+            min_value=1.0,
+            value=float(os.getenv("OFFLINE_GRID_INTENSITY", DEFAULT_OFFLINE_INTENSITY)),
+            step=1.0,
+        )
+
+    with st.sidebar.expander("Model and runtime", expanded=False):
+        groq_model = st.selectbox(
+            "Groq model",
+            [
+                "llama-3.1-8b-instant",
+                "llama-3.1-70b-versatile",
+                "llama3-8b-8192",
+                "llama3-70b-8192",
+            ],
+            index=0,
+        )
+        st.caption(f"Model: {model_name}")
+        st.caption(f"Dataset: {dataset_name}")
+
+    detected_language = detect_language(st.session_state.original_code_text)
 
     try:
         payload = get_live_carbon_intensity(
@@ -621,29 +882,89 @@ def main():
     except Exception as exc:
         st.sidebar.error(f"Failed to fetch carbon intensity: {exc}")
         st.stop()
-    st.sidebar.info(f"Carbon source: {intensity_source} ({intensity:.2f} gCO2eq/kWh)")
-    st.sidebar.caption(f"Source mode: {intensity_mode}")
-    objective_text = st.sidebar.text_input("Optimization objective", value="reduce energy")
 
-    st.sidebar.subheader("LLM Settings")
-    groq_model = st.sidebar.selectbox(
-        "Groq model",
-        [
-            "llama-3.1-8b-instant",
-            "llama-3.1-70b-versatile",
-            "llama3-8b-8192",
-            "llama3-70b-8192",
-        ],
-        index=0,
+    st.markdown(
+        """
+        <div class='hero-card'>
+            <div class='hero-title'>EcoLogic : Energy-Aware Code Refactoring</div>
+            <div class='hero-subtitle'>Closed-loop refactoring with energy, runtime, carbon, SHAP, and AST views in one executive dashboard.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    st.sidebar.write(f"Model: {model_name}")
-    st.sidebar.write(f"Dataset: {dataset_name}")
 
-    detected_language = detect_language(st.session_state.original_code_text)
-    if st.session_state.original_code_text.strip():
-        st.sidebar.success(f"Detected language: {detected_language}")
-    else:
-        st.sidebar.info("Paste code to detect language and run optimization.")
+    model_display_name = "baseline RF"
+    dataset_display_name = "eco_logic benchmark"
+
+    with st.container(border=True):
+        st.subheader("Workspace")
+        st.caption("Paste a single code sample. The dashboard will infer language and run the full optimization loop.")
+        editor_col, inspector_col = st.columns([0.66, 0.34], gap="large")
+
+        with editor_col:
+            original_code = st.text_area(
+                "Original code",
+                key="original_code_text",
+                height=520,
+                placeholder=(
+                    "Paste any code here: C++, Java, Python, or another language.\n"
+                    "Examples: backtracking, recursion, nested loops, tree traversal, DP, parsing, graph code, etc."
+                ),
+                label_visibility="collapsed",
+            )
+            action_col_1, action_col_2 = st.columns([0.36, 0.64])
+            with action_col_1:
+                run_clicked = st.button("Run closed-loop optimization", type="primary", use_container_width=True)
+            with action_col_2:
+                st.markdown(
+                    "<div class='compact-note' style='padding-top:0.35rem;'>One click runs generation, scoring, runtime checks, and Pareto ranking.</div>",
+                    unsafe_allow_html=True,
+                )
+
+        with inspector_col:
+            st.subheader("Explainability")
+            st.caption("Right-side inspector: SHAP, AST preview and Groq explanations.")
+            shap_placeholder = st.empty()
+            if st.button("Generate / refresh Groq explanation", key="groq_xai_small"):
+                st.session_state.xai_generation_requested = True
+
+            with st.container():
+                st.markdown("**AST preview (quick)**")
+                try:
+                    dot, preview = build_ast_chart(st.session_state.original_code_text or "", detected_language)
+                    st.caption(f"Nodes: {preview['node_count']} | Depth: {preview['max_depth']}")
+                    st.graphviz_chart(dot, use_container_width=True)
+                except Exception:
+                    st.info("AST preview will appear after paste or run.")
+
+    with st.container(border=True):
+        st.subheader("System snapshot")
+        snapshot_items = [
+            (
+                "Language",
+                detected_language if st.session_state.original_code_text.strip() else "Pending",
+                "Detected from the pasted code.",
+            ),
+            ("Model", model_display_name, "Baseline predictor loaded from disk."),
+            ("Dataset", dataset_display_name, "Benchmark corpus driving frontier comparisons."),
+            (
+                "Carbon",
+                f"{intensity:.2f}",
+                f"{intensity_source} | {intensity_mode}",
+            ),
+        ]
+        snapshot_cols = st.columns(4, gap="medium")
+        for column, (title, value, help_text) in zip(snapshot_cols, snapshot_items):
+            with column:
+                render_value_card(title, value, help_text)
+
+    with st.container(border=True):
+        st.subheader("Run posture")
+        posture_cols = st.columns(4, gap="medium")
+        posture_cols[0].write(f"Objective: {objective_text}")
+        posture_cols[1].write(f"Input scale N: {input_n}")
+        posture_cols[2].write(f"Hardware: {tdp:.1f} W, {cores} cores")
+        posture_cols[3].write(f"Groq model: {groq_model}\n\nAgent rounds: {max_rounds}")
 
     if st.session_state.generate_groq_pending:
         try:
@@ -673,21 +994,6 @@ def main():
             st.sidebar.warning(f"Groq generation failed: {exc}")
         finally:
             st.session_state.generate_groq_pending = False
-
-    original_code = st.text_area(
-        "Original code (paste C++, Python, etc.)",
-        key="original_code_text",
-        height=260,
-        placeholder=(
-            "Paste any code here: C++, Java, Python, or another language.\n"
-            "Examples: backtracking, recursion, nested loops, tree traversal, DP, parsing, graph code, etc."
-        ),
-    )
-
-    auto_xai = st.sidebar.checkbox("Auto Groq explanation after run", value=st.session_state.auto_xai_groq)
-    st.session_state.auto_xai_groq = auto_xai
-
-    run_clicked = st.button("Run closed-loop optimization", type="primary")
 
     if run_clicked:
         if not st.session_state.original_code_text.strip():
@@ -734,352 +1040,371 @@ def main():
 
         st.caption(f"Parser backend: {base_eval.get('parser_backend', 'unknown')}")
 
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Energy", f"{base_energy:.6f} J", f"{best_energy:.6f} J best")
-        m2.metric("Delta", f"{delta_energy:.6f} J", f"{pct:.2f}% reduction")
-        m3.metric("Carbon", f"{base_carbon:.6f} gCO2eq", f"{best_carbon:.6f} gCO2eq")
-        m4.metric("Loop runtime", f"{elapsed_ms:.1f} ms", f"{len(rounds)} rounds")
-        st.caption(f"Runtime measurement mode: {runtime_mode_label}")
+        overview_a, overview_b, overview_c, overview_d = st.columns(4, gap="medium")
+        with overview_a:
+            render_kpi_card("Energy", f"{base_energy:.6f} J", f"Best: {best_energy:.6f} J", accent="#ef4444")
+        with overview_b:
+            render_kpi_card("Delta", f"{delta_energy:.6f} J", f"{pct:.2f}% reduction", accent="#16a34a")
+        with overview_c:
+            render_kpi_card("Carbon", f"{base_carbon:.6f} gCO2eq", f"Best: {best_carbon:.6f} gCO2eq", accent="#0ea5e9")
+        with overview_d:
+            render_kpi_card("Loop runtime", f"{elapsed_ms:.1f} ms", f"{len(rounds)} rounds | {runtime_mode_label}", accent="#8b5cf6")
 
-        xai_section = st.container(border=True)
-        with xai_section:
-            st.subheader("Groq XAI explanation")
-            xai_refresh = st.button("Generate / refresh Groq explanation", key="groq_xai_refresh")
-            should_generate_xai = xai_refresh or st.session_state.xai_generation_requested or not st.session_state.xai_explanation
-            if should_generate_xai:
-                try:
-                    metrics_summary = (
-                        f"Energy: {base_eval['energy_j']:.6f} J -> {best['eval']['energy_j']:.6f} J; "
-                            f"Runtime: {base_eval['runtime_ms']:.3f} ms -> {best['eval']['runtime_ms']:.3f} ms; "
-                            f"Mode: {base_eval.get('runtime_mode', 'proxy')} -> {best['eval'].get('runtime_mode', 'proxy')}."
-                    )
-                    shap_summary_text = (
-                        f"Original top features: {', '.join(item['feature'] for item in base_shap['top_contributions'][:3])}. "
-                        f"Optimized top features: {', '.join(item['feature'] for item in best_shap['top_contributions'][:3])}."
-                    )
-                    with st.spinner("Asking Groq to explain the improvement..."):
-                        explanation = generate_code_explanation(
-                            original_code=st.session_state.original_code_text,
-                            refactored_code=best["code"],
-                            language=detected_language,
-                            objective=objective_text,
-                            metrics_summary=metrics_summary,
-                            shap_summary=shap_summary_text,
-                            model=groq_model,
-                        )
-                    st.session_state.xai_explanation = explanation
-                except Exception as exc:
-                    st.session_state.xai_explanation = local_xai_summary(base_eval, best["eval"])
-                    st.warning(f"Groq explanation failed, using local fallback: {exc}")
-                finally:
-                    st.session_state.xai_generation_requested = False
+        tabs = st.tabs(["Summary", "Code compare", "Explainability", "Diagnostics", "Frontier"])
 
-            if st.session_state.xai_explanation:
-                st.write(st.session_state.xai_explanation)
-            else:
-                st.info("Groq explanation will appear here after generation.")
-
-        st.subheader("Side-by-side optimization outcome")
-        st.write(f"{base_energy:.6f} J -> {best_energy:.6f} J")
-
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.markdown("**Original code**")
-            st.code(st.session_state.original_code_text, language=code_language_token(detected_language))
-            st.caption(f"Inferred class: {base_eval['algorithm_class']}")
-        with col_b:
-            st.markdown(f"**Best candidate ({best['label']})**")
-            st.code(best["code"], language=code_language_token(detected_language))
-            st.caption(f"Inferred class: {best['eval']['algorithm_class']}")
-
-        with st.expander("AST preview"):
-            st.caption(
-                "The AST view is a compact structural preview of the code that highlights loops, branches, allocations, and sync points."
+        # Populate right inspector placeholders with SHAP and XAI
+        try:
+            # SHAP summary for the inspector (use top contributions)
+            inspector_shap = base_shap
+            shap_text = (
+                f"Original top: {', '.join(item['feature'] for item in inspector_shap['top_contributions'][:3])}. "
+                f"Optimized top: {', '.join(item['feature'] for item in best_shap['top_contributions'][:3])}."
             )
-            ast_left, ast_right = st.columns(2)
-            with ast_left:
-                st.markdown("**Original AST**")
-                original_dot, original_ast_preview = build_ast_chart(st.session_state.original_code_text, detected_language)
-                st.caption(
-                    f"Nodes: {original_ast_preview['node_count']} | Max depth: {original_ast_preview['max_depth']} | Language: {original_ast_preview['language']}"
-                )
-                st.graphviz_chart(original_dot, use_container_width=True)
-            with ast_right:
-                st.markdown("**Optimized AST**")
-                optimized_dot, optimized_ast_preview = build_ast_chart(best["code"], detected_language)
-                st.caption(
-                    f"Nodes: {optimized_ast_preview['node_count']} | Max depth: {optimized_ast_preview['max_depth']} | Language: {optimized_ast_preview['language']}"
-                )
-                st.graphviz_chart(optimized_dot, use_container_width=True)
+            if 'shap_placeholder' in locals():
+                shap_placeholder.markdown(f"**SHAP:** {shap_text}")
+        except Exception:
+            pass
 
-        with st.expander("SHAP analysis"):
-            st.caption(
-                "SHAP explains which model inputs pushed the RandomForest energy prediction up or down. If the optional `shap` package is missing, the app falls back to a feature-importance approximation."
-            )
-            shap_left, shap_right = st.columns(2)
+        with tabs[0]:
+            summary_left, summary_right = st.columns([1.1, 0.9], gap="large")
+            with summary_left:
+                with st.container(border=True):
+                    st.subheader("Decision summary")
+                    badge_row = st.columns(3)
+                    with badge_row[0]:
+                        render_value_card("Best candidate", best["label"], f"Class: {best['eval']['algorithm_class']}")
+                    with badge_row[1]:
+                        render_value_card("Energy gain", f"{delta_energy:.6f} J", f"{pct:.2f}% reduction")
+                    with badge_row[2]:
+                        render_value_card("Runtime gain", f"{base_eval['runtime_ms']:.1f} → {best['eval']['runtime_ms']:.1f} ms", f"Mode: {runtime_mode_label}")
+                    st.markdown(
+                        f"<div class='compact-note' style='margin-top:0.75rem;'>Carbon improvement: {base_carbon - best_carbon:.6f} gCO2eq</div>",
+                        unsafe_allow_html=True,
+                    )
+            with summary_right:
+                with st.container(border=True):
+                    st.subheader("Explainability (right inspector)")
+                    st.markdown("Use the right-side inspector to view SHAP and AST details.")
+
+        with tabs[1]:
+            st.caption("Original and optimized snippets are shown side by side for quick visual review.")
+            col_a, col_b = st.columns(2, gap="large")
+            with col_a:
+                with st.container(border=True):
+                    st.markdown("**Original code**")
+                    st.code(st.session_state.original_code_text, language=code_language_token(detected_language))
+                    st.caption(f"Inferred class: {base_eval['algorithm_class']}")
+            with col_b:
+                with st.container(border=True):
+                    st.markdown(f"**Best candidate ({best['label']})**")
+                    st.code(best["code"], language=code_language_token(detected_language))
+                    st.caption(f"Inferred class: {best['eval']['algorithm_class']}")
+
+            with st.container(border=True):
+                st.subheader("AST preview")
+                st.caption(
+                    "The AST view is a compact structural preview of the code that highlights loops, branches, allocations, and sync points."
+                )
+                ast_left, ast_right = st.columns(2, gap="large")
+                with ast_left:
+                    st.markdown("**Original AST**")
+                    original_dot, original_ast_preview = build_ast_chart(st.session_state.original_code_text, detected_language)
+                    st.caption(
+                        f"Nodes: {original_ast_preview['node_count']} | Max depth: {original_ast_preview['max_depth']} | Language: {original_ast_preview['language']}"
+                    )
+                    st.graphviz_chart(original_dot, use_container_width=True)
+                with ast_right:
+                    st.markdown("**Optimized AST**")
+                    optimized_dot, optimized_ast_preview = build_ast_chart(best["code"], detected_language)
+                    st.caption(
+                        f"Nodes: {optimized_ast_preview['node_count']} | Max depth: {optimized_ast_preview['max_depth']} | Language: {optimized_ast_preview['language']}"
+                    )
+                    st.graphviz_chart(optimized_dot, use_container_width=True)
+
+        with tabs[2]:
+            shap_left, shap_right = st.columns(2, gap="large")
             for container, title, summary in [
                 (shap_left, "Original", base_shap),
                 (shap_right, "Optimized", best_shap),
             ]:
                 with container:
-                    st.markdown(f"**{title} prediction explanation**")
-                    st.caption(f"Method: {summary['method']} | Expected value: {summary['expected_value']:.6f}")
-                    shap_df = shap_summary_frame(summary).head(8)
-                    if not shap_df.empty:
-                        shap_fig = go.Figure(
-                            go.Bar(
-                                x=shap_df["contribution"],
-                                y=shap_df["feature"],
-                                orientation="h",
-                                marker_color=["#2ca02c" if val >= 0 else "#d62728" for val in shap_df["contribution"]],
+                    with st.container(border=True):
+                        st.markdown(f"**{title} prediction explanation**")
+                        st.caption(f"Method: {summary['method']} | Expected value: {summary['expected_value']:.6f}")
+                        shap_df = shap_summary_frame(summary).head(8)
+                        if not shap_df.empty:
+                            shap_fig = go.Figure(
+                                go.Bar(
+                                    x=shap_df["contribution"],
+                                    y=shap_df["feature"],
+                                    orientation="h",
+                                    marker_color=["#2ca02c" if val >= 0 else "#d62728" for val in shap_df["contribution"]],
+                                )
                             )
-                        )
-                        shap_fig.update_layout(
-                            title=f"Top SHAP contributions - {title}",
-                            xaxis_title="Contribution",
-                            yaxis_title="Feature",
-                            template="plotly_white",
-                            height=360,
-                            margin={"l": 10, "r": 10, "t": 40, "b": 10},
-                        )
-                        st.plotly_chart(shap_fig, use_container_width=True)
-                        st.dataframe(shap_df, use_container_width=True, hide_index=True)
-                    else:
-                        st.info("No SHAP data available for this model instance.")
+                            shap_fig.update_layout(
+                                title=f"Top SHAP contributions - {title}",
+                                xaxis_title="Contribution",
+                                yaxis_title="Feature",
+                                template="plotly_white",
+                                height=360,
+                                margin={"l": 10, "r": 10, "t": 40, "b": 10},
+                            )
+                            st.plotly_chart(shap_fig, use_container_width=True)
+                            st.dataframe(shap_df, use_container_width=True, hide_index=True)
+                        else:
+                            st.info("No SHAP data available for this model instance.")
 
-        with st.expander("Feature engineering metrics"):
-            left_rows = rich_feature_rows(base_eval["feature_bundle"])
-            right_rows = rich_feature_rows(best["eval"]["feature_bundle"])
-            left_df = pd.DataFrame(left_rows, columns=["feature", "original"])
-            right_df = pd.DataFrame(right_rows, columns=["feature", "optimized"])
-            feature_compare = left_df.merge(right_df, on="feature", how="outer")
-            st.dataframe(feature_compare, use_container_width=True)
-            st.caption(
-                "Tree-sitter now supplies cyclomatic complexity, Halstead-style counts, branch factors, "
-                "allocation pressure, and cache-locality stride penalty."
+        with tabs[3]:
+            diag_left, diag_right = st.columns([1.1, 0.9], gap="large")
+            with diag_left:
+                with st.container(border=True):
+                    st.subheader("Feature engineering metrics")
+                    left_rows = rich_feature_rows(base_eval["feature_bundle"])
+                    right_rows = rich_feature_rows(best["eval"]["feature_bundle"])
+                    left_df = pd.DataFrame(left_rows, columns=["feature", "original"])
+                    right_df = pd.DataFrame(right_rows, columns=["feature", "optimized"])
+                    feature_compare = left_df.merge(right_df, on="feature", how="outer")
+                    st.dataframe(feature_compare, use_container_width=True)
+                    st.caption(
+                        "Tree-sitter now supplies cyclomatic complexity, Halstead-style counts, branch factors, allocation pressure, and cache-locality stride penalty."
+                    )
+
+                with st.container(border=True):
+                    st.subheader("Closed-loop rounds")
+                    rounds_df = pd.DataFrame(rounds)
+                    st.dataframe(rounds_df, use_container_width=True)
+
+            with diag_right:
+                with st.container(border=True):
+                    st.subheader("Graph energy model")
+                    st.write(
+                        "The graph-based energy model is implemented in graph_energy_model.py and can be run independently. "
+                        "It builds Tree-sitter graphs, trains a pure-PyTorch GraphSAGE regressor, and compares it with the RandomForest baseline."
+                    )
+                    st.code("python tests/graph_energy_model_demo.py", language="bash")
+                    show_graph_model = st.checkbox("Show graph model / baseline predictions for the current snippet")
+                    if show_graph_model:
+                        try:
+                            import graph_energy_model as p3
+                        except Exception:
+                            p3 = None
+
+                        st.markdown("**Baseline RandomForest prediction**")
+                        try:
+                            if os.path.exists("feature_engineered_rf_model.pkl"):
+                                p2 = joblib.load("feature_engineered_rf_model.pkl")
+                                fb = analyze_code_features(st.session_state.original_code_text, input_n=input_n, tdp=tdp, cores=cores)
+                                vec = legacy_model_vector(fb)
+                                p2_pred = float(p2.predict([vec])[0])
+                                st.write(f"Baseline RF prediction: {p2_pred:.6f} J")
+                            else:
+                                st.info("No baseline RF model (feature_engineered_rf_model.pkl) found in project root.")
+                        except Exception as exc:
+                            st.warning(f"Failed to compute baseline prediction: {exc}")
+
+                        st.markdown("**Graph energy model prediction**")
+                        if p3 is None:
+                            st.info("Graph model module not importable. Run the graph model demo or install dependencies.")
+                        else:
+                            gnn_path = "graph_energy_model.pth"
+                            if not os.path.exists(gnn_path):
+                                st.info("No saved graph model found (graph_energy_model.pth). Run `graph_energy_model.run_graph_energy_experiment` to train one.")
+                            else:
+                                try:
+                                    device = p3.torch.device("cuda" if p3.torch.cuda.is_available() else "cpu")
+                                    builder = p3.ASTGraphBuilder()
+                                    example = builder.build(
+                                        code_text=st.session_state.original_code_text,
+                                        snippet_id="ui_snippet",
+                                        target=0.0,
+                                        input_n=input_n,
+                                        tdp=tdp,
+                                        cores=cores,
+                                        algorithm_class=infer_algorithm_class(st.session_state.original_code_text),
+                                    )
+                                    sample_graph = example
+                                    state = p3.torch.load(gnn_path, map_location=device)
+                                    if "node_type_embedding.weight" not in state:
+                                        raise ValueError("Saved graph model is missing node_type_embedding weights")
+                                    node_type_vocab_size = int(state["node_type_embedding.weight"].shape[0] - 2)
+                                    graph_feature_dim = int(sample_graph.graph_features.shape[0])
+                                    model = p3.ASTGNNRegressor(node_type_vocab_size=node_type_vocab_size, graph_feature_dim=graph_feature_dim)
+                                    model.load_state_dict(state)
+                                    model.to(device)
+                                    batch = p3.collate_graphs([example])
+                                    batch = {k: v.to(device) for k, v in batch.items()}
+                                    model.eval()
+                                    with p3.torch.no_grad():
+                                        pred = float(model(batch).cpu().item())
+                                    st.write(f"Graph model prediction: {pred:.6f} J")
+                                except Exception as exc:
+                                    st.warning(f"Failed to run graph model: {exc}")
+
+        with tabs[4]:
+            st.subheader("Energy-Time Pareto Frontier")
+            benchmark_neighbors = dataset.copy()
+            target_algo = base_eval["algorithm_class"]
+            same_algo = benchmark_neighbors[benchmark_neighbors["algorithm_class"] == target_algo]
+            if len(same_algo) >= 40:
+                benchmark_neighbors = same_algo.sample(40, random_state=42)
+            else:
+                benchmark_neighbors = benchmark_neighbors.sample(min(60, len(benchmark_neighbors)), random_state=42)
+
+            benchmark_rows: List[Dict[str, float]] = []
+            for _, row in benchmark_neighbors.iterrows():
+                runtime_profile = measure_runtime(
+                    str(row.get("source_code", "")),
+                    detect_language(str(row.get("source_code", ""))),
+                    str(row.get("algorithm_class", "unknown")),
+                    float(row.get("input_scale_N", input_n)),
+                )
+                runtime_ms = runtime_profile["runtime_ms"]
+                runtime_mode = runtime_profile.get("mode", "proxy")
+                energy_j = float(row.get("target_energy_joules", 0.0))
+                benchmark_rows.append(
+                    {
+                        "runtime_ms": runtime_ms,
+                        "energy_j": energy_j,
+                        "algorithm_class": str(row.get("algorithm_class", "unknown")),
+                        "label": "benchmark",
+                        "input_n": float(row.get("input_scale_N", input_n)),
+                        "tdp": float(row.get("hardware_tdp", tdp)),
+                        "cores": float(row.get("hardware_cores", cores)),
+                        "carbon_g": calculate_emissions_gco2eq(energy_j, intensity),
+                        "runtime_mode": runtime_mode,
+                    }
+                )
+            sampled_points = pd.DataFrame(benchmark_rows)
+
+            custom_points = pd.DataFrame(
+                [
+                    {
+                        "runtime_ms": base_eval["runtime_ms"],
+                        "energy_j": base_eval["energy_j"],
+                        "algorithm_class": base_eval["algorithm_class"],
+                        "label": "original",
+                        "input_n": float(input_n),
+                        "tdp": float(tdp),
+                        "cores": float(cores),
+                        "carbon_g": calculate_emissions_gco2eq(base_eval["energy_j"], intensity),
+                        "runtime_mode": base_eval.get("runtime_mode", "proxy"),
+                    },
+                    {
+                        "runtime_ms": best["eval"]["runtime_ms"],
+                        "energy_j": best["eval"]["energy_j"],
+                        "algorithm_class": best["eval"]["algorithm_class"],
+                        "label": "optimized",
+                        "input_n": float(input_n),
+                        "tdp": float(tdp),
+                        "cores": float(cores),
+                        "carbon_g": calculate_emissions_gco2eq(best["eval"]["energy_j"], intensity),
+                        "runtime_mode": best["eval"].get("runtime_mode", "proxy"),
+                    },
+                ]
             )
 
-        st.subheader("Closed-loop rounds")
-        rounds_df = pd.DataFrame(rounds)
-        st.dataframe(rounds_df, use_container_width=True)
+            all_points = pd.concat([sampled_points, custom_points], ignore_index=True)
+            frontier = compute_pareto_frontier(all_points[["runtime_ms", "energy_j"]].copy())
 
-        st.subheader("Energy-Time Pareto Frontier")
-        benchmark_neighbors = dataset.copy()
-        target_algo = base_eval["algorithm_class"]
-        same_algo = benchmark_neighbors[benchmark_neighbors["algorithm_class"] == target_algo]
-        if len(same_algo) >= 40:
-            benchmark_neighbors = same_algo.sample(40, random_state=42)
-        else:
-            benchmark_neighbors = benchmark_neighbors.sample(min(60, len(benchmark_neighbors)), random_state=42)
-
-        benchmark_rows: List[Dict[str, float]] = []
-        for _, row in benchmark_neighbors.iterrows():
-            runtime_profile = measure_runtime(
-                str(row.get("source_code", "")),
-                detect_language(str(row.get("source_code", ""))),
-                str(row.get("algorithm_class", "unknown")),
-                float(row.get("input_scale_N", input_n)),
-            )
-            runtime_ms = runtime_profile["runtime_ms"]
-            runtime_mode = runtime_profile.get("mode", "proxy")
-            energy_j = float(row.get("target_energy_joules", 0.0))
-            benchmark_rows.append(
-                {
-                    "runtime_ms": runtime_ms,
-                    "energy_j": energy_j,
-                    "algorithm_class": str(row.get("algorithm_class", "unknown")),
-                    "label": "benchmark",
-                    "input_n": float(row.get("input_scale_N", input_n)),
-                    "tdp": float(row.get("hardware_tdp", tdp)),
-                    "cores": float(row.get("hardware_cores", cores)),
-                    "carbon_g": calculate_emissions_gco2eq(energy_j, intensity),
-                    "runtime_mode": runtime_mode,
-                }
-            )
-        sampled_points = pd.DataFrame(benchmark_rows)
-
-        custom_points = pd.DataFrame(
-            [
-                {
-                    "runtime_ms": base_eval["runtime_ms"],
-                    "energy_j": base_eval["energy_j"],
-                    "algorithm_class": base_eval["algorithm_class"],
-                    "label": "original",
-                    "input_n": float(input_n),
-                    "tdp": float(tdp),
-                    "cores": float(cores),
-                    "carbon_g": calculate_emissions_gco2eq(base_eval["energy_j"], intensity),
-                    "runtime_mode": base_eval.get("runtime_mode", "proxy"),
-                },
-                {
-                    "runtime_ms": best["eval"]["runtime_ms"],
-                    "energy_j": best["eval"]["energy_j"],
-                    "algorithm_class": best["eval"]["algorithm_class"],
-                    "label": "optimized",
-                    "input_n": float(input_n),
-                    "tdp": float(tdp),
-                    "cores": float(cores),
-                    "carbon_g": calculate_emissions_gco2eq(best["eval"]["energy_j"], intensity),
-                    "runtime_mode": best["eval"].get("runtime_mode", "proxy"),
-                },
-            ]
-        )
-
-        all_points = pd.concat([sampled_points, custom_points], ignore_index=True)
-        frontier = compute_pareto_frontier(all_points[["runtime_ms", "energy_j"]].copy())
-
-        fig = go.Figure()
-        fig.add_trace(
-            go.Scatter(
-                x=sampled_points["runtime_ms"],
-                y=sampled_points["energy_j"],
-                mode="markers",
-                name="Benchmark",
-                marker={"size": 6, "opacity": 0.35, "color": "#2b7bba"},
-                customdata=np.stack(
-                    [
-                        sampled_points["algorithm_class"],
-                        sampled_points["input_n"],
-                        sampled_points["tdp"],
-                        sampled_points["cores"],
-                        sampled_points["carbon_g"],
-                        sampled_points["runtime_mode"],
-                    ],
-                    axis=-1,
-                ),
-                hovertemplate=(
-                    "runtime=%{x:.3f} ms<br>energy=%{y:.6f} J"
-                    "<br>class=%{customdata[0]}<br>N=%{customdata[1]}"
-                    "<br>TDP=%{customdata[2]}W<br>cores=%{customdata[3]}"
-                    "<br>carbon=%{customdata[4]:.6f} gCO2eq"
-                    "<br>runtime_mode=%{customdata[5]}<extra></extra>"
-                ),
-            )
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=[base_eval["runtime_ms"]],
-                y=[base_eval["energy_j"]],
-                mode="markers",
-                name="Original",
-                marker={"size": 12, "color": "#d62728", "symbol": "diamond"},
-                hovertemplate=(
-                    "Original<br>runtime=%{x:.3f} ms<br>energy=%{y:.6f} J"
-                    f"<br>class={base_eval['algorithm_class']}<br>N={float(input_n)}"
-                    f"<br>TDP={float(tdp)}W<br>cores={float(cores)}"
-                    f"<br>carbon={calculate_emissions_gco2eq(base_eval['energy_j'], intensity):.6f} gCO2eq"
-                    f"<br>runtime_mode={base_eval.get('runtime_mode', 'proxy')}"
-                    "<extra></extra>"
-                ),
-            )
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=[best["eval"]["runtime_ms"]],
-                y=[best["eval"]["energy_j"]],
-                mode="markers",
-                name="Optimized",
-                marker={"size": 12, "color": "#2ca02c", "symbol": "star"},
-                hovertemplate=(
-                    "Optimized<br>runtime=%{x:.3f} ms<br>energy=%{y:.6f} J"
-                    f"<br>class={best['eval']['algorithm_class']}<br>N={float(input_n)}"
-                    f"<br>TDP={float(tdp)}W<br>cores={float(cores)}"
-                    f"<br>carbon={calculate_emissions_gco2eq(best['eval']['energy_j'], intensity):.6f} gCO2eq"
-                    f"<br>runtime_mode={best['eval'].get('runtime_mode', 'proxy')}"
-                    "<extra></extra>"
-                ),
-            )
-        )
-        if len(frontier) > 1:
+            fig = go.Figure()
             fig.add_trace(
                 go.Scatter(
-                    x=frontier["runtime_ms"],
-                    y=frontier["energy_j"],
-                    mode="lines",
-                    name="Pareto frontier",
-                    line={"color": "#111111", "width": 2},
+                    x=sampled_points["runtime_ms"],
+                    y=sampled_points["energy_j"],
+                    mode="markers",
+                    name="Benchmark",
+                    marker={"size": 6, "opacity": 0.35, "color": "#2b7bba"},
+                    customdata=np.stack(
+                        [
+                            sampled_points["algorithm_class"],
+                            sampled_points["input_n"],
+                            sampled_points["tdp"],
+                            sampled_points["cores"],
+                            sampled_points["carbon_g"],
+                            sampled_points["runtime_mode"],
+                        ],
+                        axis=-1,
+                    ),
+                    hovertemplate=(
+                        "runtime=%{x:.3f} ms<br>energy=%{y:.6f} J"
+                        "<br>class=%{customdata[0]}<br>N=%{customdata[1]}"
+                        "<br>TDP=%{customdata[2]}W<br>cores=%{customdata[3]}"
+                        "<br>carbon=%{customdata[4]:.6f} gCO2eq"
+                        "<br>runtime_mode=%{customdata[5]}<extra></extra>"
+                    ),
                 )
             )
-
-        fig.update_layout(
-            xaxis_title="Execution time (ms)",
-            yaxis_title="Energy (J)",
-            template="plotly_white",
-            legend={"orientation": "h", "y": 1.02, "x": 0.0},
-            height=520,
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.caption(
-            "Runtime is measured using the runtime harness for original, optimized, and benchmark neighbors. "
-            "When execution fails, runtime falls back to a proxy mode and is tagged in tooltips."
-        )
-
-        with st.expander("Graph energy model"):
-            st.write(
-                "The graph-based energy model is implemented in graph_energy_model.py and can be run independently. "
-                "It builds Tree-sitter graphs, trains a pure-PyTorch GraphSAGE regressor, and compares it with the RandomForest baseline."
+            fig.add_trace(
+                go.Scatter(
+                    x=[base_eval["runtime_ms"]],
+                    y=[base_eval["energy_j"]],
+                    mode="markers",
+                    name="Original",
+                    marker={"size": 12, "color": "#d62728", "symbol": "diamond"},
+                    hovertemplate=(
+                        "Original<br>runtime=%{x:.3f} ms<br>energy=%{y:.6f} J"
+                        f"<br>class={base_eval['algorithm_class']}<br>N={float(input_n)}"
+                        f"<br>TDP={float(tdp)}W<br>cores={float(cores)}"
+                        f"<br>carbon={calculate_emissions_gco2eq(base_eval['energy_j'], intensity):.6f} gCO2eq"
+                        f"<br>runtime_mode={base_eval.get('runtime_mode', 'proxy')}"
+                        "<extra></extra>"
+                    ),
+                )
             )
-            st.code("python tests/graph_energy_model_demo.py", language="bash")
-            show_graph_model = st.checkbox("Show graph model / baseline predictions for the current snippet")
-            if show_graph_model:
-                try:
-                    import graph_energy_model as p3
-                except Exception:
-                    p3 = None
+            fig.add_trace(
+                go.Scatter(
+                    x=[best["eval"]["runtime_ms"]],
+                    y=[best["eval"]["energy_j"]],
+                    mode="markers",
+                    name="Optimized",
+                    marker={"size": 12, "color": "#2ca02c", "symbol": "star"},
+                    hovertemplate=(
+                        "Optimized<br>runtime=%{x:.3f} ms<br>energy=%{y:.6f} J"
+                        f"<br>class={best['eval']['algorithm_class']}<br>N={float(input_n)}"
+                        f"<br>TDP={float(tdp)}W<br>cores={float(cores)}"
+                        f"<br>carbon={calculate_emissions_gco2eq(best['eval']['energy_j'], intensity):.6f} gCO2eq"
+                        f"<br>runtime_mode={best['eval'].get('runtime_mode', 'proxy')}"
+                        "<extra></extra>"
+                    ),
+                )
+            )
+            if len(frontier) > 1:
+                fig.add_trace(
+                    go.Scatter(
+                        x=frontier["runtime_ms"],
+                        y=frontier["energy_j"],
+                        mode="lines",
+                        name="Pareto frontier",
+                        line={"color": "#111111", "width": 2},
+                    )
+                )
 
-                st.markdown("**Baseline RandomForest prediction**")
-                try:
-                    if os.path.exists("feature_engineered_rf_model.pkl"):
-                        p2 = joblib.load("feature_engineered_rf_model.pkl")
-                        fb = analyze_code_features(st.session_state.original_code_text, input_n=input_n, tdp=tdp, cores=cores)
-                        vec = legacy_model_vector(fb)
-                        p2_pred = float(p2.predict([vec])[0])
-                        st.write(f"Baseline RF prediction: {p2_pred:.6f} J")
-                    else:
-                        st.info("No baseline RF model (feature_engineered_rf_model.pkl) found in project root.")
-                except Exception as exc:
-                    st.warning(f"Failed to compute baseline prediction: {exc}")
+            fig.update_layout(
+                xaxis_title="Execution time (ms)",
+                yaxis_title="Energy (J)",
+                template="plotly_white",
+                legend={"orientation": "h", "y": 1.02, "x": 0.0},
+                height=520,
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-                st.markdown("**Graph energy model prediction**")
-                if p3 is None:
-                    st.info("Graph model module not importable. Run the graph model demo or install dependencies.")
-                else:
-                    # Attempt to load a saved GNN model if present
-                    gnn_path = "graph_energy_model.pth"
-                    if not os.path.exists(gnn_path):
-                        st.info("No saved graph model found (graph_energy_model.pth). Run `graph_energy_model.run_graph_energy_experiment` to train one.")
-                    else:
-                        try:
-                            device = p3.torch.device("cuda" if p3.torch.cuda.is_available() else "cpu")
-                            # Build a single GraphExample for the snippet
-                            builder = p3.ASTGraphBuilder()
-                            example = builder.build(
-                                code_text=st.session_state.original_code_text,
-                                snippet_id="ui_snippet",
-                                target=0.0,
-                                input_n=input_n,
-                                tdp=tdp,
-                                cores=cores,
-                                algorithm_class=infer_algorithm_class(st.session_state.original_code_text),
-                            )
-                            sample_graph = example
-                            state = p3.torch.load(gnn_path, map_location=device)
-                            if "node_type_embedding.weight" not in state:
-                                raise ValueError("Saved graph model is missing node_type_embedding weights")
-                            node_type_vocab_size = int(state["node_type_embedding.weight"].shape[0] - 2)
-                            graph_feature_dim = int(sample_graph.graph_features.shape[0])
-                            model = p3.ASTGNNRegressor(node_type_vocab_size=node_type_vocab_size, graph_feature_dim=graph_feature_dim)
-                            model.load_state_dict(state)
-                            model.to(device)
-                            batch = p3.collate_graphs([example])
-                            batch = {k: v.to(device) for k, v in batch.items()}
-                            model.eval()
-                            with p3.torch.no_grad():
-                                pred = float(model(batch).cpu().item())
-                            st.write(f"Graph model prediction: {pred:.6f} J")
-                        except Exception as exc:
-                            st.warning(f"Failed to run graph model: {exc}")
+            st.caption(
+                "Runtime is measured using the runtime harness for original, optimized, and benchmark neighbors. "
+                "When execution fails, runtime falls back to a proxy mode and is tagged in tooltips."
+            )
+
+    elif st.session_state.original_code_text.strip():
+        st.info("Ready to run. The dashboard will generate candidates, score them, and render the comparison tabs after you press Run.")
+    else:
+        with st.container(border=True):
+            st.subheader("Quick start")
+            quick_a, quick_b, quick_c = st.columns(3)
+            with quick_a:
+                render_value_card("1. Paste code", "Input sample", "Use one function, class, or snippet at a time.")
+            with quick_b:
+                render_value_card("2. Run optimization", "Execute loop", "The app will generate a candidate and score both versions.")
+            with quick_c:
+                render_value_card("3. Review outcome", "Compare views", "Inspect energy, runtime, SHAP, AST, and the Pareto frontier.")
 
 
 if __name__ == "__main__":

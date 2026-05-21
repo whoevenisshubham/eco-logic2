@@ -699,6 +699,3 @@ To reproduce this project, ensure the generated code has:
 - RF baseline support and AST-GNN support.
 - Strict LLM prompt and post-validation.
 - Pareto frontier rendering in the UI.
-
-
-
