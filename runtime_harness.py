@@ -161,10 +161,6 @@ def _build_python_benchmark(code_text, algorithm_class, sample_n):
 def _build_cpp_benchmark(code_text, algorithm_class, sample_n):
     candidate_names = _extract_identifier_candidates(code_text, algorithm_class, "C++")
     code_text = code_text.strip()
-    has_main = bool(re.search(r"\bmain\s*\(", code_text))
-    if has_main:
-        return code_text, candidate_names, False
-
     candidate_name = next(
         (
             name
@@ -219,6 +215,17 @@ def _build_cpp_benchmark(code_text, algorithm_class, sample_n):
             return 0;
         }}
         """
+
+    has_main = bool(re.search(r"\bmain\s*\(", code_text))
+    if has_main:
+        wrapper = f"""
+        #include <chrono>
+        #define main user_main
+        {code_text}
+        #undef main
+        {body}
+        """
+        return textwrap.dedent(wrapper).strip(), candidate_names, False
 
     wrapper = textwrap.dedent(
         f"""

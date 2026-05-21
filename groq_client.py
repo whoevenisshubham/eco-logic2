@@ -71,6 +71,39 @@ def generate_refactor(prompt: str, model: str = "llama-3.1-8b-instant", max_outp
     return json.dumps(resp)
 
 
+def generate_code_explanation(
+    original_code: str,
+    refactored_code: str,
+    language: str = "C++",
+    objective: str = "improve runtime and energy efficiency",
+    metrics_summary: str = "",
+    shap_summary: str = "",
+    model: str = "llama-3.1-8b-instant",
+    max_output_tokens: int = 700,
+) -> str:
+    """Use Groq to explain how the refactor improved the code.
+
+    The output should describe the algorithmic change, expected complexity impact,
+    and the observed/predicted runtime or energy deltas.
+    """
+
+    prompt = (
+        "You are a senior performance engineer and code reviewer. Explain how the refactored code improved the original code. "
+        "Be concrete and technical, but write for a developer who wants to understand the change quickly. "
+        "Do not generate code. Do not mention that you are an AI. "
+        "Use plain language with short bullet points. "
+        f"Target language: {language}. Objective: {objective}.\n\n"
+        "Original code:\n```"
+        f"{language.lower()}\n{original_code}\n```\n\n"
+        "Refactored code:\n```"
+        f"{language.lower()}\n{refactored_code}\n```\n\n"
+        f"Metrics summary:\n{metrics_summary or 'No metrics provided.'}\n\n"
+        f"SHAP summary:\n{shap_summary or 'No SHAP summary provided.'}\n\n"
+        "Explain: what changed, why it is better, what tradeoffs remain, and which parts of the refactor most likely drove the improvement."
+    )
+    return generate_refactor(prompt, model=model, max_output_tokens=max_output_tokens)
+
+
 if __name__ == "__main__":
     import load_env
     load_env.load()

@@ -105,12 +105,6 @@ void bubbleSortOptimized(std::vector<int>& arr) {
         if (!swapped) break;
     }
 }''',
-        "std_sort": '''#include <algorithm>
-#include <vector>
-
-void fastSort(std::vector<int>& arr) {
-    std::sort(arr.begin(), arr.end());
-}''',
     }
 
     candidates = []

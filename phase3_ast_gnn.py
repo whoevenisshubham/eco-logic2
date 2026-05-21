@@ -217,12 +217,13 @@ class ASTGraphBuilder:
         )
 
     def _graph_features(self, feature_bundle: Dict[str, float]) -> torch.Tensor:
+        stride_penalty = feature_bundle.get("stride_penalty", 0.0) if self.include_cache_locality else 0.0
         values = [
             feature_bundle.get("input_n", 0.0),
             feature_bundle.get("tdp", 0.0),
             feature_bundle.get("cores", 0.0),
             feature_bundle.get("cyclomatic_complexity", 0.0),
-            feature_bundle.get("stride_penalty", 0.0 if self.include_cache_locality else 0.0),
+            stride_penalty,
             feature_bundle.get("allocation_count", 0.0),
             feature_bundle.get("max_loop_depth", 0.0),
             feature_bundle.get("memory_pressure", 0.0),
@@ -354,7 +355,12 @@ def collate_graphs(batch: Sequence[GraphExample]) -> Dict[str, torch.Tensor]:
         numeric_features.append(example.numeric_features)
         graph_features.append(example.graph_features)
         targets.append(torch.tensor(example.target, dtype=torch.float32))
-        snippet_ids.append(torch.tensor([hash(example.snippet_id)], dtype=torch.long))
+        snippet_ids.append(
+            torch.tensor(
+                [int(example.snippet_id)] if str(example.snippet_id).isdigit() else [_hash_token(str(example.snippet_id), 2**31 - 1)],
+                dtype=torch.long,
+            )
+        )
         if example.edge_index.numel() > 0:
             edge_indices.append(example.edge_index + graph_offsets)
             edge_types.append(example.edge_types)
@@ -627,7 +633,20 @@ def run_phase3_experiment(csv_path: str, model_path: str = "phase1_model.pkl", e
         # after training the best weights are loaded into `model` by `_train_model`
         if save_path:
             try:
-                torch.save(model.state_dict(), save_path)
+                torch.save(
+                    {
+                        "state_dict": model.state_dict(),
+                        "meta": {
+                            "node_type_vocab_size": len(train_ds.builder._node_type_vocab),
+                            "graph_feature_dim": sample_graph.graph_features.shape[0],
+                            "token_vocab_size": model.token_embedding.num_embeddings - 2,
+                            "include_data_flow": include_data_flow,
+                            "include_cache_locality": include_cache_locality,
+                            "carbon_aware_objective": carbon_aware_objective,
+                        },
+                    },
+                    save_path,
+                )
             except Exception:
                 pass
         test_metrics = _evaluate_model(model, test_loader, device)
@@ -704,7 +723,7 @@ def run_phase3_ablation_suite(csv_path: str, model_path: str = "phase1_model.pkl
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Phase 3 AST-GNN training and evaluation")
-    parser.add_argument("--csv", default="eco_logic_synthetic_benchmark.csv")
+    parser.add_argument("--csv", "--data-file", dest="csv", default="eco_logic_synthetic_benchmark.csv")
     parser.add_argument("--model-path", default="phase1_model.pkl")
     parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--save-path", default="phase3_model.pth")

@@ -1,13 +1,21 @@
 from __future__ import annotations
 
-import os
-import random
+import argparse
 from pathlib import Path
+
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
 import phase3_ast_gnn as p3
+
+
+def _load_saved_model(model_path: str, model: torch.nn.Module, device: torch.device) -> None:
+    state = torch.load(model_path, map_location=device)
+    if isinstance(state, dict) and "state_dict" in state:
+        model.load_state_dict(state["state_dict"])
+    else:
+        model.load_state_dict(state)
 
 
 def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str = "phase3_model.pth", baseline_model: str = "phase2_model.pkl", seed: int = 42):
@@ -36,8 +44,7 @@ def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str =
         if not Path(saved_model).exists():
             print(f"Saved model not found: {saved_model}")
         else:
-            state = torch.load(saved_model, map_location=device)
-            model.load_state_dict(state)
+            _load_saved_model(saved_model, model, device)
             model.to(device)
             metrics = p3._evaluate_model(model, test_loader, device)
             print("Phase‑3 saved model metrics:")
@@ -60,4 +67,10 @@ def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str =
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Evaluate a saved Phase 3 AST-GNN model")
+    parser.add_argument("--csv", "--data-file", dest="csv_path", default="eco_logic_synthetic_benchmark.csv")
+    parser.add_argument("--saved-model", default="phase3_model.pth")
+    parser.add_argument("--baseline-model", default="phase2_model.pkl")
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+    main(csv_path=args.csv_path, saved_model=args.saved_model, baseline_model=args.baseline_model, seed=args.seed)

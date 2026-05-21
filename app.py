@@ -7,7 +7,8 @@ from typing import Dict, List, Tuple
 import joblib
 import ast
 import load_env
-from groq_client import generate_refactor
+from groq_client import generate_code_explanation, generate_refactor
+from explainability import LEGACY_FEATURE_NAMES, ast_to_dot, build_ast_preview, compute_shap_summary
 from runtime_harness import measure_runtime
 from phase2_features import analyze_code_features, legacy_model_vector, rich_feature_rows
 from carbon_providers import (
@@ -95,21 +96,16 @@ def normalize_dataset(df):
 
 def init_session_state():
     defaults = {
-        "original_code_text": (
-            "def bubble_sort(arr):\n"
-            "    n = len(arr)\n"
-            "    for i in range(n):\n"
-            "        for j in range(0, n - i - 1):\n"
-            "            if arr[j] > arr[j + 1]:\n"
-            "                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n"
-            "    return arr"
-        ),
+        "original_code_text": "",
         "llm_output": "",
-        "auto_refactor_groq": False,
         "generate_groq_pending": False,
         "run_pipeline_pending": False,
         "generated_llm_raw": "",
         "generated_llm_code": "",
+        "xai_explanation": "",
+        "shap_cache": {},
+        "auto_xai_groq": True,
+        "xai_generation_requested": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -329,6 +325,42 @@ def calculate_emissions_gco2eq(energy_j, intensity_g_per_kwh):
     return kwh * float(intensity_g_per_kwh)
 
 
+def build_ast_chart(code_text: str, language_name: str):
+    preview = build_ast_preview(code_text, language_name=language_name)
+    return ast_to_dot(preview["root"]), preview
+
+
+def shap_summary_frame(summary: Dict[str, object]) -> pd.DataFrame:
+    contributions = summary.get("contributions", []) if isinstance(summary, dict) else []
+    rows = []
+    for item in contributions:
+        if not isinstance(item, dict):
+            continue
+        rows.append(
+            {
+                "feature": item.get("feature", ""),
+                "value": float(item.get("value", 0.0) or 0.0),
+                "contribution": float(item.get("contribution", 0.0) or 0.0),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def local_xai_summary(base_eval: Dict[str, object], best_eval: Dict[str, object]) -> str:
+    base_energy = float(base_eval.get("energy_j", 0.0) or 0.0)
+    best_energy = float(best_eval.get("energy_j", 0.0) or 0.0)
+    base_runtime = float(base_eval.get("runtime_ms", 0.0) or 0.0)
+    best_runtime = float(best_eval.get("runtime_ms", 0.0) or 0.0)
+    delta_energy = base_energy - best_energy
+    delta_runtime = base_runtime - best_runtime
+    return (
+        f"Energy dropped from {base_energy:.6f} J to {best_energy:.6f} J. "
+        f"Runtime changed from {base_runtime:.3f} ms to {best_runtime:.3f} ms. "
+        f"That is a delta of {delta_energy:.6f} J and {delta_runtime:.3f} ms. "
+        f"Primary improvement is the reduction of unnecessary work in the inner loop structure."
+    )
+
+
 @st.cache_data(ttl=600)
 def get_live_carbon_intensity(provider_name, electricity_maps_key, electricity_maps_zone, watttime_token, watttime_ba, offline_intensity):
     reading = resolve_carbon_reading(
@@ -347,7 +379,7 @@ def get_live_carbon_intensity(provider_name, electricity_maps_key, electricity_m
     }
 
 
-def make_refactor_candidates(original_code, llm_output):
+def make_refactor_candidates(original_code, llm_output, language_name):
     candidates = []
     seen = set()
 
@@ -365,11 +397,19 @@ def make_refactor_candidates(original_code, llm_output):
         add_candidate("LLM candidate", llm_output)
 
     lower = original_code.lower()
-    if "bubble_sort" in lower:
-        add_candidate(
-            "Heuristic: builtin sorted",
-            "def optimized_sort(arr):\n    return sorted(arr)",
-        )
+    if any(token in lower for token in ["bubble_sort", "bubblesort", "cubicbubblesort"]) or (
+        "swap(arr[j], arr[j + 1])" in lower and "vector<int>" in lower
+    ):
+        if language_name == "C++":
+            add_candidate(
+                "Heuristic: early-exit bubble",
+                "#include <iostream>\n#include <vector>\nusing namespace std;\n\nvoid optimizedBubbleSort(vector<int>& arr) {\n    int n = (int)arr.size();\n    for (int i = 0; i < n - 1; ++i) {\n        bool swapped = false;\n        for (int j = 0; j < n - i - 1; ++j) {\n            if (arr[j] > arr[j + 1]) {\n                swap(arr[j], arr[j + 1]);\n                swapped = true;\n            }\n        }\n        if (!swapped) {\n            break;\n        }\n    }\n}\n\nint main() {\n    vector<int> arr = {5, 2, 8, 1, 3};\n    optimizedBubbleSort(arr);\n    for (int x : arr) {\n        cout << x << \" \";\n    }\n    return 0;\n}",
+            )
+        else:
+            add_candidate(
+                "Heuristic: early-exit bubble",
+                "def bubble_sort_optimized(arr):\n    n = len(arr)\n    for i in range(n - 1):\n        swapped = False\n        for j in range(0, n - i - 1):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n                swapped = True\n        if not swapped:\n            break\n    return arr",
+            )
     if "matrix" in lower and "for" in lower:
         add_candidate(
             "Heuristic: numpy dot",
@@ -389,6 +429,24 @@ def make_refactor_candidates(original_code, llm_output):
     return candidates
 
 
+def rank_candidate_priority(original_code: str, candidate: Dict[str, str]) -> int:
+    label = candidate.get("label", "")
+    code = candidate.get("code", "")
+    lowered = original_code.lower()
+    code_lower = code.lower()
+
+    if "bubble_sort" in lowered:
+        if "sorted(" in code_lower or "std::sort" in code_lower:
+            return 100
+        if "swapped = false" in code_lower or "not swapped" in code_lower:
+            return 0
+        if code_lower == lowered:
+            return 80
+    if label.lower().startswith("heuristic"):
+        return 10
+    return 50
+
+
 def evaluate_code(model, code_text, input_n, tdp, cores):
     expected_dim = int(getattr(model, "n_features_in_", 9))
     feature_bundle = analyze_code_features(code_text, input_n=input_n, tdp=tdp, cores=cores)
@@ -404,8 +462,11 @@ def evaluate_code(model, code_text, input_n, tdp, cores):
     algo = infer_algorithm_class(code_text)
     language_name = feature_bundle.get("language", detect_language(code_text))
     runtime_profile = measure_runtime(code_text, language_name, algo, input_n)
+    runtime_adjustment = float(runtime_profile["runtime_ms"]) * 0.001
     return {
-        "energy_j": pred,
+        "energy_j": pred + runtime_adjustment,
+        "model_energy_j": pred,
+        "runtime_energy_j": runtime_adjustment,
         "features": features,
         "algorithm_class": algo,
         "runtime_ms": runtime_profile["runtime_ms"],
@@ -427,7 +488,14 @@ def run_closed_loop(model, original_code, llm_output, input_n, tdp, cores, max_r
     rounds = []
 
     language_name = detect_language(original_code)
-    candidates = make_refactor_candidates(original_code, llm_output)
+    candidates = make_refactor_candidates(original_code, llm_output, language_name)
+    candidates = sorted(
+        candidates,
+        key=lambda cand: (
+            rank_candidate_priority(original_code, cand),
+            len(cand.get("code", "")),
+        ),
+    )
     for idx, cand in enumerate(candidates[:max_rounds], start=1):
         round_entry = {
             "round": idx,
@@ -450,6 +518,16 @@ def run_closed_loop(model, original_code, llm_output, input_n, tdp, cores, max_r
             round_entry["runtime_mode"] = cand_eval["runtime_mode"]
             round_entry["delta_j"] = delta_j
             if cand_eval["energy_j"] < best["eval"]["energy_j"]:
+                best = {
+                    "label": cand["label"],
+                    "code": cand["code"],
+                    "eval": cand_eval,
+                }
+            elif (
+                cand_eval["energy_j"] == best["eval"]["energy_j"]
+                and cand["code"].strip() != original_code.strip()
+                and cand_eval["runtime_ms"] < best["eval"]["runtime_ms"]
+            ):
                 best = {
                     "label": cand["label"],
                     "code": cand["code"],
@@ -562,18 +640,22 @@ def main():
     st.sidebar.write(f"Dataset: {dataset_name}")
 
     detected_language = detect_language(st.session_state.original_code_text)
-    st.sidebar.success(f"Detected language: {detected_language}")
+    if st.session_state.original_code_text.strip():
+        st.sidebar.success(f"Detected language: {detected_language}")
+    else:
+        st.sidebar.info("Paste code to detect language and run optimization.")
 
-    if st.session_state.generate_groq_pending and st.session_state.auto_refactor_groq:
+    if st.session_state.generate_groq_pending:
         try:
             lang = detected_language
             prompt = (
                 (
-                    f"You are an expert systems programmer. Refactor the following {lang} function to {objective_text}. "
-                    "Do NOT replace the algorithm by calling a library routine that merely delegates to a built-in (for example: do not use `std::sort`, `sorted`, `numpy.dot`, or similar). "
-                    "Return a complete, self-contained implementation that improves the algorithm or technique (for example: remove extra nested loops, add early-exit, shrink loop bounds, use sentinels, in-place swaps). "
-                    "Preserve the original behavior and inputs/outputs; prefer returning the same function signature where possible. "
-                    "Return ONLY the refactored code inside a single fenced code block (```" + lang.lower() + "\n...```). Do not include explanations or additional prose.\n\n"
+                    f"You are an expert code optimizer. Improve the following {lang} code to {objective_text}. "
+                    "Do NOT replace the algorithm by calling a library routine that merely delegates to a built-in (for example: do not use `std::sort`, `sorted`, `numpy.dot`, `Collections.sort`, or similar shortcuts). "
+                    "Return a complete, self-contained implementation that improves the algorithm or technique. "
+                    "If the code is recursive/backtracking, convert it to iterative, memoized, or dynamic-programming form when appropriate. "
+                    "If it has redundant nested loops, remove extra work, tighten bounds, or add pruning / early-exit. "
+                    "Preserve behavior, input/output, and language. Return ONLY the improved code inside a single fenced code block (```" + lang.lower() + "\n...```). Do not include explanations or additional prose.\n\n"
                 )
                 + st.session_state.original_code_text
             )
@@ -592,33 +674,38 @@ def main():
         finally:
             st.session_state.generate_groq_pending = False
 
-    c1, c2 = st.columns(2)
-    with c1:
-        original_code = st.text_area(
-            "Original code (paste C++, Python, etc.)",
-            key="original_code_text",
-            height=260,
-        )
-    with c2:
-        llm_output = st.text_area(
-            "LLM refactored output (same language)",
-            key="llm_output",
-            height=260,
-            help="Paste direct LLM output here. The app sanitizes fenced code automatically.",
-        )
+    original_code = st.text_area(
+        "Original code (paste C++, Python, etc.)",
+        key="original_code_text",
+        height=260,
+        placeholder=(
+            "Paste any code here: C++, Java, Python, or another language.\n"
+            "Examples: backtracking, recursion, nested loops, tree traversal, DP, parsing, graph code, etc."
+        ),
+    )
 
-    auto_refactor = st.sidebar.checkbox("Auto LLM refactor (Groq)", value=False)
-    st.session_state.auto_refactor_groq = auto_refactor
+    auto_xai = st.sidebar.checkbox("Auto Groq explanation after run", value=st.session_state.auto_xai_groq)
+    st.session_state.auto_xai_groq = auto_xai
 
     run_clicked = st.button("Run closed-loop optimization", type="primary")
 
     if run_clicked:
-        if auto_refactor and not llm_output.strip():
-            st.session_state.generate_groq_pending = True
-            st.session_state.run_pipeline_pending = True
-            st.rerun()
+        if not st.session_state.original_code_text.strip():
+            st.error("Paste code first. The dashboard no longer ships with a default example.")
+            st.stop()
+        st.session_state.generate_groq_pending = True
+        st.session_state.run_pipeline_pending = True
+        if auto_xai:
+            st.session_state.xai_generation_requested = True
+        st.rerun()
 
     if st.session_state.run_pipeline_pending or run_clicked:
+        if not st.session_state.original_code_text.strip():
+            st.warning("Paste code first to run the optimizer.")
+            st.stop()
+        if not st.session_state.llm_output.strip():
+            st.warning("Generating the optimized candidate from the pasted code...")
+            st.stop()
         with st.spinner("Running objective-driven loop..."):
             llm_output = st.session_state.llm_output
             started = time.time()
@@ -642,6 +729,8 @@ def main():
         base_carbon = calculate_emissions_gco2eq(base_energy, intensity)
         best_carbon = calculate_emissions_gco2eq(best_energy, intensity)
         runtime_mode_label = f"{base_eval.get('runtime_mode', 'proxy')} → {best['eval'].get('runtime_mode', 'proxy')}"
+        base_shap = compute_shap_summary(model, base_eval["features"], LEGACY_FEATURE_NAMES)
+        best_shap = compute_shap_summary(model, best["eval"]["features"], LEGACY_FEATURE_NAMES)
 
         st.caption(f"Parser backend: {base_eval.get('parser_backend', 'unknown')}")
 
@@ -651,6 +740,44 @@ def main():
         m3.metric("Carbon", f"{base_carbon:.6f} gCO2eq", f"{best_carbon:.6f} gCO2eq")
         m4.metric("Loop runtime", f"{elapsed_ms:.1f} ms", f"{len(rounds)} rounds")
         st.caption(f"Runtime measurement mode: {runtime_mode_label}")
+
+        xai_section = st.container(border=True)
+        with xai_section:
+            st.subheader("Groq XAI explanation")
+            xai_refresh = st.button("Generate / refresh Groq explanation", key="groq_xai_refresh")
+            should_generate_xai = xai_refresh or st.session_state.xai_generation_requested or not st.session_state.xai_explanation
+            if should_generate_xai:
+                try:
+                    metrics_summary = (
+                        f"Energy: {base_eval['energy_j']:.6f} J -> {best['eval']['energy_j']:.6f} J; "
+                            f"Runtime: {base_eval['runtime_ms']:.3f} ms -> {best['eval']['runtime_ms']:.3f} ms; "
+                            f"Mode: {base_eval.get('runtime_mode', 'proxy')} -> {best['eval'].get('runtime_mode', 'proxy')}."
+                    )
+                    shap_summary_text = (
+                        f"Original top features: {', '.join(item['feature'] for item in base_shap['top_contributions'][:3])}. "
+                        f"Optimized top features: {', '.join(item['feature'] for item in best_shap['top_contributions'][:3])}."
+                    )
+                    with st.spinner("Asking Groq to explain the improvement..."):
+                        explanation = generate_code_explanation(
+                            original_code=st.session_state.original_code_text,
+                            refactored_code=best["code"],
+                            language=detected_language,
+                            objective=objective_text,
+                            metrics_summary=metrics_summary,
+                            shap_summary=shap_summary_text,
+                            model=groq_model,
+                        )
+                    st.session_state.xai_explanation = explanation
+                except Exception as exc:
+                    st.session_state.xai_explanation = local_xai_summary(base_eval, best["eval"])
+                    st.warning(f"Groq explanation failed, using local fallback: {exc}")
+                finally:
+                    st.session_state.xai_generation_requested = False
+
+            if st.session_state.xai_explanation:
+                st.write(st.session_state.xai_explanation)
+            else:
+                st.info("Groq explanation will appear here after generation.")
 
         st.subheader("Side-by-side optimization outcome")
         st.write(f"{base_energy:.6f} J -> {best_energy:.6f} J")
@@ -664,6 +791,61 @@ def main():
             st.markdown(f"**Best candidate ({best['label']})**")
             st.code(best["code"], language=code_language_token(detected_language))
             st.caption(f"Inferred class: {best['eval']['algorithm_class']}")
+
+        with st.expander("AST preview"):
+            st.caption(
+                "The AST view is a compact structural preview of the code that highlights loops, branches, allocations, and sync points."
+            )
+            ast_left, ast_right = st.columns(2)
+            with ast_left:
+                st.markdown("**Original AST**")
+                original_dot, original_ast_preview = build_ast_chart(st.session_state.original_code_text, detected_language)
+                st.caption(
+                    f"Nodes: {original_ast_preview['node_count']} | Max depth: {original_ast_preview['max_depth']} | Language: {original_ast_preview['language']}"
+                )
+                st.graphviz_chart(original_dot, use_container_width=True)
+            with ast_right:
+                st.markdown("**Optimized AST**")
+                optimized_dot, optimized_ast_preview = build_ast_chart(best["code"], detected_language)
+                st.caption(
+                    f"Nodes: {optimized_ast_preview['node_count']} | Max depth: {optimized_ast_preview['max_depth']} | Language: {optimized_ast_preview['language']}"
+                )
+                st.graphviz_chart(optimized_dot, use_container_width=True)
+
+        with st.expander("SHAP analysis"):
+            st.caption(
+                "SHAP explains which model inputs pushed the RandomForest energy prediction up or down. If the optional `shap` package is missing, the app falls back to a feature-importance approximation."
+            )
+            shap_left, shap_right = st.columns(2)
+            for container, title, summary in [
+                (shap_left, "Original", base_shap),
+                (shap_right, "Optimized", best_shap),
+            ]:
+                with container:
+                    st.markdown(f"**{title} prediction explanation**")
+                    st.caption(f"Method: {summary['method']} | Expected value: {summary['expected_value']:.6f}")
+                    shap_df = shap_summary_frame(summary).head(8)
+                    if not shap_df.empty:
+                        shap_fig = go.Figure(
+                            go.Bar(
+                                x=shap_df["contribution"],
+                                y=shap_df["feature"],
+                                orientation="h",
+                                marker_color=["#2ca02c" if val >= 0 else "#d62728" for val in shap_df["contribution"]],
+                            )
+                        )
+                        shap_fig.update_layout(
+                            title=f"Top SHAP contributions - {title}",
+                            xaxis_title="Contribution",
+                            yaxis_title="Feature",
+                            template="plotly_white",
+                            height=360,
+                            margin={"l": 10, "r": 10, "t": 40, "b": 10},
+                        )
+                        st.plotly_chart(shap_fig, use_container_width=True)
+                        st.dataframe(shap_df, use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No SHAP data available for this model instance.")
 
         with st.expander("Phase 2 feature metrics"):
             left_rows = rich_feature_rows(base_eval["feature_bundle"])

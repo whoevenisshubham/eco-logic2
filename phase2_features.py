@@ -449,7 +449,7 @@ def analyze_code_features(code_text: str, input_n: float = 10000.0, tdp: float =
 
 def legacy_model_vector(bundle: Dict[str, Any]) -> List[float]:
     return [
-        float(min(bundle.get("max_loop_depth", 0), 3)),
+        float(max(0.0, bundle.get("max_loop_depth", 0))),
         float(bundle.get("busy_wait_score", 0.0)),
         float(min(bundle.get("allocation_in_loops", 0) + bundle.get("memory_pressure", 0.0), 3.0)),
         float(max(0.0, min(bundle.get("stride_penalty", 0.0), 1.0))),

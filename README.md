@@ -53,13 +53,13 @@ PYTHONPATH=. python scripts/eval_refactor_candidates.py
 - Train Phase‑3 AST‑GNN model (example):
 
 ```bash
-python phase3_ast_gnn.py --data-file data/train_dataset.parquet --epochs 30 --save-path phase3_model.pth
+python phase3_ast_gnn.py --csv eco_logic_synthetic_benchmark.csv --epochs 30 --save-path phase3_model.pth
 ```
 
 - Evaluate saved Phase‑3 model:
 
 ```bash
-python evaluate_phase3_saved.py --model-path phase3_model.pth
+python evaluate_phase3_saved.py --saved-model phase3_model.pth --baseline-model phase2_model.pkl --csv eco_logic_synthetic_benchmark.csv
 ```
 
 ## Models and artifacts
