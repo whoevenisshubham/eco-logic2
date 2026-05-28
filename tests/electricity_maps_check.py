@@ -15,5 +15,8 @@ print("status", resp.status_code)
 try:
     j = resp.json()
     print(j)
-except Exception:
+except Exception as exc:
+    from log_config import get_logger
+
+    get_logger(__name__).exception("Failed to parse Electricity Maps response: %s", exc)
     print(resp.text)

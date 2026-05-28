@@ -7,6 +7,12 @@ from pathlib import Path
 
 import joblib
 
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import load_env
 load_env.load()
 
@@ -50,11 +56,9 @@ int main() {
 
 PROMPT = (
     (
-        "You are an expert C++ programmer. Refactor the following C++ function to reduce worst-case and typical CPU work (aim for algorithmic improvement). "
-        "Do NOT replace the algorithm by calling a library routine that merely delegates to a built-in (for example: do not use `std::sort`, `qsort`, or similar). "
-        "Return a complete, self-contained C++ implementation that improves the algorithm or technique (for example: remove extra nested loops, add early-exit, shrink loop bounds, sentinel optimizations). "
-        "Preserve the original behavior and inputs/outputs where possible. "
-        "Return ONLY valid, compilable C++ code inside a single fenced code block and do not include any explanations.\n\n"
+        "You are an expert C++ performance engineer. Replace the algorithm implementation in the following C++ code with a correct, compilable, and more efficient algorithmic implementation. "
+        "Prefer standard library algorithms (e.g., `std::sort`) or algorithmic improvements (early-exit, reduced complexity). "
+        "Include all necessary headers and `using namespace std;` when appropriate. Return ONLY the refactored C++ code inside a fenced code block (```cpp ... ```). Do not include any explanations.\n\n"
     )
     + ORIGINAL_CODE
 )
@@ -67,6 +71,32 @@ def extract_fenced(code_text: str) -> str:
     if m:
         return m.group(1).strip()
     return code_text.strip()
+
+
+def _sanitize_cpp_code(code: str) -> str:
+    low = code.lower()
+    need_vector = "vector<" in low and "#include <vector>" not in low
+    need_iostream = "cout" in low and "#include <iostream>" not in low
+    need_algorithm = "sort(" in low and "#include <algorithm>" not in low
+    need_using_std = ("using namespace std" not in low) and (need_vector or need_iostream or need_algorithm)
+
+    headers = []
+    if need_iostream:
+        headers.append("#include <iostream>")
+    if need_vector:
+        headers.append("#include <vector>")
+    if need_algorithm:
+        headers.append("#include <algorithm>")
+
+    prefix = ""
+    if headers:
+        prefix = "\n".join(headers) + "\n"
+    if need_using_std:
+        prefix += "using namespace std;\n\n"
+
+    if prefix and prefix.strip() not in code:
+        return prefix + code
+    return code
 
 
 def safe_predict(model, code_text):
@@ -115,6 +145,9 @@ void bubbleSortOptimized(std::vector<int>& arr) {
     try:
         out = generate_refactor(PROMPT)
         llm_code = extract_fenced(out)
+        # sanitize C++ outputs to include common headers
+        if any(tok in llm_code for tok in ["vector<", "cout", "sort("]):
+            llm_code = _sanitize_cpp_code(llm_code)
         if llm_code and llm_code.strip() != "":
             candidates.append(("llm_refactor", llm_code))
     except Exception as e:

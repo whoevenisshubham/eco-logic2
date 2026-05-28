@@ -7,7 +7,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 try:
     from tree_sitter_languages import get_parser
-except Exception:  # pragma: no cover - optional dependency fallback
+except Exception as exc:  # pragma: no cover - optional dependency fallback
+    from log_config import get_logger
+
+    logger = get_logger(__name__)
+    logger.warning("Optional dependency tree_sitter_languages unavailable: %s", exc)
     get_parser = None
 
 
@@ -123,6 +127,8 @@ def detect_language(code_text: str) -> str:
     low = code_text.lower()
     if "#include" in low or "std::" in low or "cout" in low or "using namespace" in low or "::" in low:
         return "C++"
+    if "using system" in low or "console.write" in low or "console.writeline" in low or "static void main(" in low:
+        return "C#"
     if "def " in low or "import " in low or "numpy" in low or "pandas" in low:
         return "Python"
     if "public static void main" in low or "system.out.println" in low:
@@ -133,6 +139,8 @@ def detect_language(code_text: str) -> str:
 def _language_key(language_name: str) -> str:
     if language_name == "C++":
         return "cpp"
+    if language_name == "C#":
+        return "c_sharp"
     if language_name == "Java":
         return "java"
     return "python"
@@ -145,7 +153,10 @@ def _normalize_whitespace(text: str) -> str:
 def _safe_text(code_bytes: bytes, node: Any) -> str:
     try:
         return code_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="ignore")
-    except Exception:
+    except Exception as exc:
+        from log_config import get_logger
+
+        get_logger(__name__).exception("Failed to decode node text: %s", exc)
         return ""
 
 
@@ -440,7 +451,10 @@ def analyze_code_features(code_text: str, input_n: float = 10000.0, tdp: float =
             "parse_error": False,
         }
         return bundle
-    except Exception:
+    except Exception as exc:
+        from log_config import get_logger
+
+        get_logger(__name__).exception("Feature extraction failed, falling back to regex: %s", exc)
         bundle = _fallback_feature_bundle(code_text, input_n, tdp, cores)
         bundle["parser_backend"] = f"fallback-regex:{language_name.lower()}"
         bundle["parse_error"] = True

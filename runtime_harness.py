@@ -7,7 +7,10 @@ import subprocess
 import tempfile
 import textwrap
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
+
+from project_ingestion import scan_project
 
 
 def runtime_proxy(algorithm_class, n_val, cores):
@@ -239,6 +242,54 @@ def _build_cpp_benchmark(code_text, algorithm_class, sample_n):
     return wrapper, candidate_names, True
 
 
+def _build_csharp_project(code_text):
+    csproj = textwrap.dedent(
+        """
+        <Project Sdk=\"Microsoft.NET.Sdk\">
+          <PropertyGroup>
+            <OutputType>Exe</OutputType>
+            <TargetFramework>net8.0</TargetFramework>
+            <ImplicitUsings>enable</ImplicitUsings>
+            <Nullable>disable</Nullable>
+          </PropertyGroup>
+        </Project>
+        """
+    ).strip()
+    has_main = bool(re.search(r"\bstatic\s+void\s+Main\s*\(", code_text, flags=re.IGNORECASE))
+    if has_main:
+        return code_text, csproj
+
+    # Fallback wrapper if LLM returned only methods/class fragments.
+    wrapped = textwrap.dedent(
+        f"""
+        using System;
+        using System.Diagnostics;
+
+        class Program
+        {{
+            {code_text}
+
+            static void Main()
+            {{
+                int[] arr = new int[] {{ 5, 1, 4, 2, 8, 7, 3, 9, 6, 0 }};
+                var sw = Stopwatch.StartNew();
+                try
+                {{
+                    BubbleSort(arr);
+                }}
+                catch
+                {{
+                    Array.Sort(arr);
+                }}
+                sw.Stop();
+                Console.WriteLine(sw.Elapsed.TotalMilliseconds);
+            }}
+        }}
+        """
+    ).strip()
+    return wrapped, csproj
+
+
 def measure_runtime(code_text, language_name, algorithm_class, input_n, timeout_s=8.0):
     sample_n = choose_sample_size(algorithm_class, input_n)
     detail = {
@@ -301,8 +352,151 @@ def measure_runtime(code_text, language_name, algorithm_class, input_n, timeout_
                 detail.update({"mode": "measured", "tool": compiler, "run_ms": elapsed_ms})
                 return {"runtime_ms": measured_ms, "mode": "measured", "detail": detail}
 
+        if language_name == "C#":
+            dotnet = shutil.which("dotnet")
+            if not dotnet:
+                raise RuntimeError("dotnet CLI not available on PATH")
+            source_text, csproj_text = _build_csharp_project(code_text)
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_root = Path(temp_dir)
+                csproj_path = temp_root / "Benchmark.csproj"
+                source_path = temp_root / "Program.cs"
+                csproj_path.write_text(csproj_text, encoding="utf-8")
+                source_path.write_text(source_text, encoding="utf-8")
+
+                build_result = subprocess.run(
+                    [dotnet, "build", str(csproj_path), "-c", "Release", "--nologo"],
+                    capture_output=True,
+                    text=True,
+                    timeout=max(timeout_s, 20.0),
+                )
+                if build_result.returncode != 0:
+                    raise RuntimeError((build_result.stderr or build_result.stdout or "C# build failed").strip())
+
+                started = time.perf_counter()
+                run_result = subprocess.run(
+                    [dotnet, "run", "--no-build", "-c", "Release", "--project", str(csproj_path)],
+                    capture_output=True,
+                    text=True,
+                    timeout=max(timeout_s, 20.0),
+                )
+                elapsed_ms = (time.perf_counter() - started) * 1000.0
+                if run_result.returncode != 0:
+                    raise RuntimeError((run_result.stderr or run_result.stdout or "C# benchmark failed").strip())
+
+                output_lines = [line.strip() for line in run_result.stdout.splitlines() if line.strip()]
+                measured_ms = elapsed_ms
+                if output_lines:
+                    last = output_lines[-1]
+                    try:
+                        measured_ms = float(last)
+                    except ValueError:
+                        measured_ms = elapsed_ms
+
+                detail.update({"mode": "measured", "tool": dotnet, "run_ms": elapsed_ms})
+                return {"runtime_ms": measured_ms, "mode": "measured", "detail": detail}
+
         raise RuntimeError(f"Unsupported language for execution measurement: {language_name}")
     except Exception as exc:
-        fallback_ms = runtime_proxy(algorithm_class, input_n, 1)
-        detail.update({"mode": "proxy", "reason": str(exc)})
-        return {"runtime_ms": fallback_ms, "mode": "proxy", "detail": detail}
+        # Do not silently return a proxy estimate. Surface the error so callers
+        # can decide how to handle measurement failures (e.g., show an error).
+        raise RuntimeError(f"Runtime measurement failed: {exc}")
+
+
+def _choose_dotnet_entry(project_manifest):
+    dotnet_summary = project_manifest.get("dotnet_summary", {}) if project_manifest else {}
+    preferred = dotnet_summary.get("solution_files") or dotnet_summary.get("project_files") or []
+    if preferred:
+        return str(Path(project_manifest["root_path"]) / preferred[0])
+    return None
+
+
+def _parse_csproj_output_type(project_file):
+    try:
+        tree = ET.parse(project_file)
+        root = tree.getroot()
+        for element in root.iter():
+            tag = element.tag.split("}")[-1]
+            if tag == "OutputType":
+                value = (element.text or "").strip().lower()
+                if value:
+                    return value
+    except ET.ParseError as exc:
+        import warnings
+
+        warnings.warn(f"Failed to parse csproj {project_file}: {exc}")
+    except Exception as exc:
+        from log_config import get_logger
+
+        get_logger(__name__).exception("Unexpected error parsing csproj %s: %s", project_file, exc)
+    return "library"
+
+
+def _choose_dotnet_project_file(project_manifest):
+    if not project_manifest:
+        return None
+    dotnet_summary = project_manifest.get("dotnet_summary", {})
+    project_files = dotnet_summary.get("project_files") or []
+    root_path = Path(project_manifest["root_path"])
+
+    executable_projects = []
+    for relative_path in project_files:
+        project_file = root_path / relative_path
+        if _parse_csproj_output_type(project_file) == "exe":
+            executable_projects.append(str(project_file))
+
+    if executable_projects:
+        return executable_projects[0]
+    if project_files:
+        return str(root_path / project_files[0])
+    return None
+
+
+def measure_dotnet_project(project_root, timeout_s=120.0):
+    manifest = scan_project(project_root)
+    dotnet_path = _choose_dotnet_entry(manifest)
+    project_file = _choose_dotnet_project_file(manifest)
+    detail = {
+        "language": "C#",
+        "project_root": str(Path(project_root).resolve()),
+        "project_type": manifest.get("project_type"),
+        "file_count": manifest.get("file_count", 0),
+        "project_file": project_file,
+    }
+
+    if not dotnet_path:
+        raise RuntimeError("No .sln or .csproj found for .NET profiling")
+
+    dotnet = shutil.which("dotnet")
+    if not dotnet:
+        raise RuntimeError("dotnet CLI not available on PATH")
+
+    started = time.perf_counter()
+    result = subprocess.run(
+        [dotnet, "build", dotnet_path, "-c", "Release", "--nologo"],
+        capture_output=True,
+        text=True,
+        timeout=timeout_s,
+    )
+    elapsed_ms = (time.perf_counter() - started) * 1000.0
+    if result.returncode != 0:
+        raise RuntimeError((result.stderr or result.stdout or "dotnet build failed").strip())
+
+    detail.update({"mode": "measured", "tool": dotnet, "build_ms": elapsed_ms})
+
+    if project_file and _parse_csproj_output_type(project_file) == "exe":
+        started = time.perf_counter()
+        run_result = subprocess.run(
+            [dotnet, "run", "--no-build", "-c", "Release", "--project", project_file],
+            capture_output=True,
+            text=True,
+            timeout=timeout_s,
+        )
+        run_elapsed_ms = (time.perf_counter() - started) * 1000.0
+        if run_result.returncode == 0:
+            detail.update({"run_ms": run_elapsed_ms})
+            return {"runtime_ms": run_elapsed_ms, "mode": "measured", "detail": detail}
+
+        raise RuntimeError((run_result.stderr or run_result.stdout or "dotnet run failed").strip())
+
+    return {"runtime_ms": elapsed_ms, "mode": "measured", "detail": detail}

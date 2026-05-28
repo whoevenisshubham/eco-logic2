@@ -36,7 +36,10 @@ def groq_generate(prompt: str, model: str = "llama-3.1-8b-instant", max_tokens: 
     if resp.status_code != 200:
         try:
             body = resp.json()
-        except Exception:
+        except Exception as exc:
+            from log_config import get_logger
+
+            get_logger(__name__).exception("Failed to parse error body from Groq response: %s", exc)
             body = resp.text
         raise RuntimeError(f"Groq API error {resp.status_code}: {body}")
 
@@ -64,8 +67,10 @@ def generate_refactor(prompt: str, model: str = "llama-3.1-8b-instant", max_outp
             text = first.get("text")
             if isinstance(text, str) and text:
                 return text
-    except Exception:
-        pass
+    except Exception as exc:
+        from log_config import get_logger
+
+        get_logger(__name__).exception("Failed to parse Groq response: %s", exc)
 
     # Fallback: stringify body
     return json.dumps(resp)

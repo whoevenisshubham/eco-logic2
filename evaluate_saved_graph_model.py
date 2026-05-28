@@ -62,8 +62,10 @@ def main(csv_path: str = "eco_logic_synthetic_benchmark.csv", saved_model: str =
         for f in [train_path, val_path, test_path]:
             try:
                 Path(f).unlink(missing_ok=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                from log_config import get_logger
+
+                get_logger(__name__).exception("Failed to cleanup temp file %s: %s", f, exc)
 
 
 if __name__ == "__main__":

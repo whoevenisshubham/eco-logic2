@@ -4,7 +4,10 @@ import os
 try:
     from dotenv import load_dotenv
     _has_dotenv = True
-except Exception:
+except Exception as exc:
+    from log_config import get_logger
+
+    get_logger(__name__).warning("python-dotenv not available: %s", exc)
     _has_dotenv = False
 
 

@@ -1,0 +1,180 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R >> >> /Contents 7 0 R >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Length 5673 >>
+stream
+0.0627 0.1961 0.2902 rg
+0 783.89 595.28 58 re f
+1 1 1 rg
+BT /F1 20 Tf 1 0 0 1 152.64 813.89 Tm (EcoLogic Optimization Certificate) Tj ET
+BT /F1 9 Tf 1 0 0 1 112.64 796.89 Tm (Closed-loop optimization summary and measured impact) Tj ET
+BT /F1 10 Tf 1 0 0 1 42.00 759.89 Tm (Generated at: 2026-05-28 12:15:42) Tj ET
+BT /F1 10 Tf 1 0 0 1 42.00 741.89 Tm (Project: Workspace) Tj ET
+BT /F1 9 Tf 1 0 0 1 42.00 727.89 Tm (Project type: single-file | Selected file: demo.py) Tj ET
+BT /F1 12 Tf 1 0 0 1 42.00 707.89 Tm (Optimization summary) Tj ET
+0.95 0.96 0.98 rg 42.00 683.89 140.00 16 re f
+0.98 0.98 0.98 rg 182.00 683.89 370.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 683.89 510.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 694.89 Tm (Model) Tj ET
+BT /F1 9 Tf 1 0 0 1 188.00 694.89 Tm (phase1_model.pkl) Tj ET
+0.95 0.96 0.98 rg 42.00 667.89 140.00 16 re f
+0.98 0.98 0.98 rg 182.00 667.89 370.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 667.89 510.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 678.89 Tm (Dataset) Tj ET
+BT /F1 9 Tf 1 0 0 1 188.00 678.89 Tm (eco_logic_synthetic_benchmark.csv) Tj ET
+0.95 0.96 0.98 rg 42.00 651.89 140.00 16 re f
+0.98 0.98 0.98 rg 182.00 651.89 370.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 651.89 510.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 662.89 Tm (Input scale N) Tj ET
+BT /F1 9 Tf 1 0 0 1 188.00 662.89 Tm (100) Tj ET
+0.95 0.96 0.98 rg 42.00 635.89 140.00 16 re f
+0.98 0.98 0.98 rg 182.00 635.89 370.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 635.89 510.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 646.89 Tm (CPU cores / TDP) Tj ET
+BT /F1 9 Tf 1 0 0 1 188.00 646.89 Tm (8 / 45) Tj ET
+0.95 0.96 0.98 rg 42.00 619.89 140.00 16 re f
+0.98 0.98 0.98 rg 182.00 619.89 370.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 619.89 510.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 630.89 Tm (Carbon intensity) Tj ET
+BT /F1 9 Tf 1 0 0 1 188.00 630.89 Tm (714.00 gCO2eq/kWh) Tj ET
+0.95 0.96 0.98 rg 42.00 603.89 140.00 16 re f
+0.98 0.98 0.98 rg 182.00 603.89 370.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 603.89 510.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 614.89 Tm (Rounds) Tj ET
+BT /F1 9 Tf 1 0 0 1 188.00 614.89 Tm (1) Tj ET
+0.95 0.96 0.98 rg 42.00 587.89 140.00 16 re f
+0.98 0.98 0.98 rg 182.00 587.89 370.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 587.89 510.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 598.89 Tm (Selection reason) Tj ET
+BT /F1 9 Tf 1 0 0 1 188.00 598.89 Tm (unknown) Tj ET
+BT /F1 12 Tf 1 0 0 1 42.00 579.89 Tm (Performance comparison) Tj ET
+0.95 0.96 0.98 rg 42.00 555.89 130.00 16 re f
+0.98 0.98 0.98 rg 172.00 555.89 120.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 555.89 250.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 566.89 Tm (Metric) Tj ET
+BT /F1 9 Tf 1 0 0 1 178.00 566.89 Tm (Original) Tj ET
+0.95 0.96 0.98 rg 292.00 555.89 110.00 16 re f
+0.98 0.98 0.98 rg 402.00 555.89 130.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+292.00 555.89 240.00 16 re S
+BT /F1 8 Tf 1 0 0 1 298.00 566.89 Tm (Optimized) Tj ET
+BT /F1 9 Tf 1 0 0 1 408.00 566.89 Tm () Tj ET
+0.95 0.96 0.98 rg 42.00 539.89 130.00 16 re f
+0.98 0.98 0.98 rg 172.00 539.89 120.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 539.89 250.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 550.89 Tm (Inferred algorithm) Tj ET
+BT /F1 9 Tf 1 0 0 1 178.00 550.89 Tm (bubble_sort) Tj ET
+0.95 0.96 0.98 rg 292.00 539.89 110.00 16 re f
+0.98 0.98 0.98 rg 402.00 539.89 130.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+292.00 539.89 240.00 16 re S
+BT /F1 8 Tf 1 0 0 1 298.00 550.89 Tm () Tj ET
+BT /F1 9 Tf 1 0 0 1 408.00 550.89 Tm (sorted) Tj ET
+0.95 0.96 0.98 rg 42.00 523.89 130.00 16 re f
+0.98 0.98 0.98 rg 172.00 523.89 120.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 523.89 250.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 534.89 Tm (Energy \(J\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 178.00 534.89 Tm (1.230000) Tj ET
+0.95 0.96 0.98 rg 292.00 523.89 110.00 16 re f
+0.98 0.98 0.98 rg 402.00 523.89 130.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+292.00 523.89 240.00 16 re S
+BT /F1 8 Tf 1 0 0 1 298.00 534.89 Tm () Tj ET
+BT /F1 9 Tf 1 0 0 1 408.00 534.89 Tm (0.450000) Tj ET
+0.95 0.96 0.98 rg 42.00 507.89 130.00 16 re f
+0.98 0.98 0.98 rg 172.00 507.89 120.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 507.89 250.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 518.89 Tm (Proxy runtime \(ms\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 178.00 518.89 Tm (5.000) Tj ET
+0.95 0.96 0.98 rg 292.00 507.89 110.00 16 re f
+0.98 0.98 0.98 rg 402.00 507.89 130.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+292.00 507.89 240.00 16 re S
+BT /F1 8 Tf 1 0 0 1 298.00 518.89 Tm () Tj ET
+BT /F1 9 Tf 1 0 0 1 408.00 518.89 Tm (1.700) Tj ET
+0.95 0.96 0.98 rg 42.00 491.89 130.00 16 re f
+0.98 0.98 0.98 rg 172.00 491.89 120.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 491.89 250.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 502.89 Tm (Measured runtime \(ms\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 178.00 502.89 Tm (5.500) Tj ET
+0.95 0.96 0.98 rg 292.00 491.89 110.00 16 re f
+0.98 0.98 0.98 rg 402.00 491.89 130.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+292.00 491.89 240.00 16 re S
+BT /F1 8 Tf 1 0 0 1 298.00 502.89 Tm () Tj ET
+BT /F1 9 Tf 1 0 0 1 408.00 502.89 Tm (1.200) Tj ET
+0.95 0.96 0.98 rg 42.00 475.89 130.00 16 re f
+0.98 0.98 0.98 rg 172.00 475.89 120.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+42.00 475.89 250.00 16 re S
+BT /F1 8 Tf 1 0 0 1 48.00 486.89 Tm (Measured delta \(ms\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 178.00 486.89 Tm () Tj ET
+0.95 0.96 0.98 rg 292.00 475.89 110.00 16 re f
+0.98 0.98 0.98 rg 402.00 475.89 130.00 16 re f
+0.82 0.85 0.88 RG 0.82 0.85 0.88 rg
+292.00 475.89 240.00 16 re S
+BT /F1 8 Tf 1 0 0 1 298.00 486.89 Tm () Tj ET
+BT /F1 9 Tf 1 0 0 1 408.00 486.89 Tm (4.300) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Length 963 >>
+stream
+0.0627 0.1961 0.2902 rg
+0 783.89 595.28 58 re f
+1 1 1 rg
+BT /F1 20 Tf 1 0 0 1 152.64 813.89 Tm (EcoLogic Certificate - Supporting Details) Tj ET
+BT /F1 9 Tf 1 0 0 1 112.64 796.89 Tm (Code snapshot and reviewed rounds) Tj ET
+BT /F1 12 Tf 1 0 0 1 42.00 759.89 Tm (Code snapshot) Tj ET
+BT /F1 10 Tf 1 0 0 1 42.00 745.89 Tm (Original snippet) Tj ET
+BT /F1 7 Tf 1 0 0 1 52.00 733.89 Tm (def bubble_sort\(arr\):) Tj ET
+BT /F1 7 Tf 1 0 0 1 52.00 724.89 Tm (pass) Tj ET
+BT /F1 10 Tf 1 0 0 1 42.00 709.89 Tm (Optimized snippet) Tj ET
+BT /F1 7 Tf 1 0 0 1 52.00 697.89 Tm (def optimized\(arr\):) Tj ET
+BT /F1 7 Tf 1 0 0 1 52.00 688.89 Tm (return sorted\(arr\)) Tj ET
+BT /F1 12 Tf 1 0 0 1 42.00 673.89 Tm (Rounds reviewed) Tj ET
+BT /F1 8 Tf 1 0 0 1 50.00 659.89 Tm (Round 1: heuristic | energy=0.450000 | runtime=1.700 | measured=1.200 | selected) Tj ET
+BT /F1 8 Tf 1 0 0 1 42.00 60.00 Tm (Generated by EcoLogic. This certificate is designed to stay within 1-2 pages.) Tj ET
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000253 00000 n 
+0000000385 00000 n 
+0000000455 00000 n 
+0000006179 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+7192
+%%EOF

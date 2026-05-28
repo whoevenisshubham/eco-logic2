@@ -5,6 +5,8 @@ import ast as py_ast
 import html
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+import warnings
+import traceback
 
 import numpy as np
 
@@ -35,6 +37,8 @@ def detect_language(code_text: str) -> str:
     low = (code_text or "").lower()
     if "#include" in low or "std::" in low or "cout" in low or "using namespace" in low or "::" in low:
         return "C++"
+    if "using system" in low or "console.write" in low or "console.writeline" in low or "static void main(" in low:
+        return "C#"
     if "def " in low or "import " in low or "numpy" in low or "pandas" in low:
         return "Python"
     if "public static void main" in low or "system.out.println" in low:
@@ -111,7 +115,8 @@ def build_ast_preview(code_text: str, language_name: Optional[str] = None) -> Di
             root = _build_python_ast(code_text)
         else:
             root = _build_line_ast(code_text)
-    except Exception:
+    except Exception as exc:
+        warnings.warn(f"AST preview build failed, falling back to line-based AST: {exc}\n" + traceback.format_exc())
         root = _build_line_ast(code_text)
 
     node_count = 0
@@ -199,7 +204,8 @@ def compute_shap_summary(
             for name, val, shap_val in zip(feature_names, values.tolist(), arr.tolist())
         ]
         method = "shap.TreeExplainer"
-    except Exception:
+    except Exception as exc:
+        warnings.warn(f"SHAP explainer failed, falling back to feature importances: {exc}\n" + traceback.format_exc())
         importances = np.asarray(getattr(model, "feature_importances_", np.ones_like(values) / max(len(values), 1)), dtype=float)
         if importances.size != values.size:
             importances = np.resize(importances, values.size)
@@ -221,7 +227,8 @@ def compute_shap_summary(
     predicted_value = None
     try:
         predicted_value = float(model.predict(values.reshape(1, -1))[0])
-    except Exception:
+    except Exception as exc:
+        warnings.warn(f"Model prediction failed in explainability.compute_shap_summary: {exc}\n" + traceback.format_exc())
         predicted_value = None
 
     return {

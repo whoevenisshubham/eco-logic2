@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import joblib
+import warnings
+import traceback
 import numpy as np
 import pandas as pd
 import torch
@@ -23,7 +25,10 @@ from feature_engineering import analyze_code_features, detect_language
 
 try:
     from tree_sitter_languages import get_parser
-except Exception:  # pragma: no cover - optional dependency fallback
+except Exception as exc:  # pragma: no cover - optional dependency fallback
+    from log_config import get_logger
+
+    get_logger(__name__).warning("Optional dependency tree_sitter_languages unavailable: %s", exc)
     get_parser = None
 
 
@@ -47,7 +52,10 @@ def _clean_text(text: str) -> str:
 def _safe_text(code_bytes: bytes, node) -> str:
     try:
         return code_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="ignore")
-    except Exception:
+    except Exception as exc:
+        from log_config import get_logger
+
+        get_logger(__name__).exception("Failed to decode AST node text: %s", exc)
         return ""
 
 
@@ -122,7 +130,8 @@ class ASTGraphBuilder:
         try:
             tree = parser.parse(code_bytes)
             root = tree.root_node
-        except Exception:
+        except Exception as exc:
+            warnings.warn(f"Parser failed for AST building: {exc}\n" + traceback.format_exc())
             return self._fallback_graph(code_text, snippet_id, target, input_n, tdp, cores, algorithm_class, language_name, feature_bundle)
 
         nodes: List[Dict[str, float]] = []
@@ -647,8 +656,8 @@ def run_graph_energy_experiment(csv_path: str, model_path: str = "baseline_rf_mo
                     },
                     save_path,
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                warnings.warn(f"Failed to save model to {save_path}: {exc}\n" + traceback.format_exc())
         test_metrics = _evaluate_model(model, test_loader, device)
         baseline_metrics = evaluate_baseline_model(model_path, test_df)
         return {
@@ -661,11 +670,11 @@ def run_graph_energy_experiment(csv_path: str, model_path: str = "baseline_rf_mo
             "carbon_aware_objective": {"enabled": carbon_aware_objective},
         }
     finally:
-        for temp in [train_path, val_path, test_path]:
-            try:
-                Path(temp).unlink(missing_ok=True)
-            except Exception:
-                pass
+            for temp in [train_path, val_path, test_path]:
+                try:
+                    Path(temp).unlink(missing_ok=True)
+                except Exception as exc:
+                    warnings.warn(f"Failed to remove temp file {temp}: {exc}")
 
 
 def run_graph_energy_ablation_suite(csv_path: str, model_path: str = "baseline_rf_model.pkl", epochs: int = 8, limit: Optional[int] = 240, batch_size: int = 8, seed: int = 42) -> Dict[str, Dict[str, Dict[str, float]]]:
