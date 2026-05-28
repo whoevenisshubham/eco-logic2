@@ -1,123 +1,165 @@
-# Freshstart — Energy-aware Refactor Agent
+**EcoLogic**
 
-This repository implements a closed-loop refactoring agent that: parses code, extracts features, predicts energy use, measures runtime when possible, converts energy to carbon, and visualizes an Energy–Time Pareto frontier. It includes a baseline RandomForest predictor and a graph-based energy regressor.
+Introduction
+============
 
-This README covers how to set up, run, test, and push changes to Git.
+EcoLogic is a lightweight tool for exploring how small changes to program code affect execution time, estimated energy consumption, and approximate carbon emissions. It is intended to make optimization outcomes accessible to non-technical stakeholders while also providing a modest amount of developer-facing information for reproducibility and local use.
 
-## Quick setup
+Overview (User-facing)
+----------------------
 
-1. Clone or open the repo in your workspace.
-2. Create a Python virtual environment and install dependencies.
+At a high level, EcoLogic does the following when you run an analysis session:
 
-```bash
+1. Accepts a single source file or a project (folder/zip/repo) as input.
+2. Generates candidate refactors using built-in heuristics and, optionally, an LLM assistant.
+3. Scores candidates using a fast energy predictor and a proxy runtime model.
+4. When possible, performs measured runtime profiling for the original and the best candidate.
+5. Produces an easy-to-read dashboard with numeric summaries and a PDF certificate you can download.
+
+Why this matters to non-developers
+---------------------------------
+
+- Energy and carbon numbers give a concise, comparable metric for software-related efficiency improvements.
+- The PDF certificate provides a sharable artifact for reporting and audits.
+- You don't need to be a developer to see whether a proposed change is likely to improve performance or reduce energy.
+
+Quick User Walkthrough
+----------------------
+
+1. Open the app in your browser (it runs as a local web dashboard).
+2. Provide the code to analyze:
+	- Paste the source file into the main editor area, or
+	- Use the workspace intake panel to scan a local folder, upload a ZIP, or provide a Git URL.
+3. Configure simple knobs in the sidebar (Input scale N, cores, and electricity intensity) if desired.
+4. Click the "Run closed-loop optimization" button.
+5. Inspect the dashboard: energy estimates, measured runtime (if available), Pareto chart, and rounds table.
+6. Download the PDF certificate if you want to share the result.
+
+User-facing UI Elements Explained
+--------------------------------
+
+- Source code editor: paste or edit the original code you want to score.
+- LLM output box: optionally paste a suggested refactor from any external tool; the app can also call the integrated assistant.
+- Run button: starts the candidate generation, evaluation, and profiling loop.
+- Metrics tiles: show energy (J), delta, estimated carbon, and loop runtime.
+- Pareto plot: benchmark points vs. original vs. optimized candidate.
+- Certificates panel (sidebar): lists previously generated certificates and allows downloads.
+
+Certificates and Evidence
+-------------------------
+
+Each run can produce a small PDF certificate summarizing:
+
+- Generated at (timestamp), project/file, input settings (N, cores, TDP), and carbon intensity used.
+- Tabulated numeric comparisons (energy, proxy runtime, measured runtime if available).
+- A short code excerpt for the original and the selected best candidate.
+- High-level selection reason (e.g., lower predicted energy, measured runtime improvement).
+
+Certificates are saved locally under the `certificates/` directory, and you can also download them directly from the UI.
+
+Interpreting the Numbers
+--------------------------------------------
+
+- Treat measured runtime as stronger evidence than model-based proxy runtime when available.
+- Small energy differences (a few percent) are noisy with model-based predictions; prefer measured runtime differences greater than a few percent for operational changes.
+- Use the Pareto chart to compare both time and energy; a point lower-left of another is strictly better for both dimensions.
+
+Short Example Scenario
+--------------------------------------
+
+Imagine you run the tool on a sorting function used in a data pipeline. The app generates an optimized candidate that replaces a loop-based sort with a standard library sort. The app will show:
+
+- Predicted energy decreased by X J (model estimate).
+- Measured runtime (if available) decreased from A ms to B ms.
+- The certificate will state that the selected candidate was chosen for lower predicted energy and confirmed by a measured speedup of Y%.
+
+Developer / Setup Information
+-------------------------------------
+
+The following section contains minimal developer/setup steps for local use. Non-developers can skip this section.
+
+1) Python runtime
+
+- EcoLogic runs on Python 3.10+ but is commonly used with Python 3.11. Use a virtual environment for local installs.
+
+2) Basic installation
+
+From the repository root, the minimal steps are:
+
+```powershell
 python -m venv .venv
-source .venv/bin/activate    # macOS / Linux
-.venv\Scripts\Activate.ps1  # Windows PowerShell
+.venv\Scripts\Activate.ps1    # Windows PowerShell
 pip install -r requirements.txt
 ```
 
-If `requirements.txt` does not exist, ensure you have these (typical):
+If you prefer POSIX shells (macOS / Linux):
 
 ```bash
-pip install streamlit plotly scikit-learn torch torchvision torchaudio tree_sitter pandas numpy matplotlib seaborn
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-## Environment variables
+Notes:
+- The app uses `streamlit` for the UI and a small scikit-learn RandomForest as a fallback predictor.
+- If you cannot install dependencies, the app still functions in a limited form: the UI will still accept pasted code and show stored artifacts, but runtime profiling or LLM calls will be disabled or limited.
 
-Create a `.env` or export environment variables in your shell. Useful keys:
+3) .NET (optional, for C# project profiling)
 
-- `GROQ_API_KEY` — API key for Groq/GPT provider wrapper used by `groq_client.py` (if applicable).
-- `ELECTRICITY_MAPS_API_KEY` — (Optional) for `carbon_providers.ElectricityMapsAdapter`.
-- `WATTTIME_TOKEN`, `WATTTIME_BA` — (Optional) for `WattTimeAdapter`.
+If you want the app to run measured profiles for C#/.NET projects, install the .NET SDK (recommended 8.x or later). On Windows use the official installer or package manager; ensure the `dotnet` CLI is on your PATH.
 
-Load `.env` via `load_env.py` if present, or export manually.
+If `dotnet` is not available, the app will fall back to model-based estimates for .NET code.
 
-## Run the Streamlit app (dashboard)
+4) Environment variables (optional)
 
-From the repository root:
+- `GROQ_API_KEY` — optional API key for the integrated LLM assistant (if you configure an external LLM provider).
+- `ELECTRICITY_MAPS_API_KEY` — optional for fetching live carbon intensity from Electricity Maps.
+- `WATTTIME_USERNAME` / `WATTTIME_PASSWORD` — optional for WattTime.
 
-```bash
-streamlit run app.py
+If no API keys are provided the app will use a fallback static intensity value that you can adjust in the UI sidebar.
+
+5) Running the app locally
+
+Start Streamlit from the repository root:
+
+```powershell
+streamlit run app.py --server.port 8504
 ```
 
-The UI shows: input code, generated LLM refactor candidates, heuristic candidates, predicted energy (J), predicted carbon (gCO2eq), and an interactive Pareto frontier. Measured runtimes replace proxy runtime when available.
+Open the URL shown in the terminal (usually `http://localhost:8504`).
 
-## Scripts and common commands
+6) Files and layout (what's important)
 
-- Evaluate refactor candidates (LLM + heuristics):
+- `app.py` — main Streamlit application and orchestration.
+- `runtime_harness.py` — code that builds, executes, and measures runtime for language-specific snippets.
+- `project_ingestion.py` — scans folders, ZIPs, and repos to detect target files and .NET projects.
+- `groq_client.py` — optional wrapper for calling an LLM provider to request refactor candidates.
+- `eco_logic_synthetic_benchmark.csv` — a small benchmark dataset used to train the fallback model if no saved model artifact exists.
+- `certificates/` — folder where generated PDFs are stored.
 
-```bash
-PYTHONPATH=. python scripts/eval_refactor_candidates.py
+7) Training a fallback model (developer note)
+
+If the application does not find a saved model artifact it will attempt to train a fallback RandomForest from the CSV benchmark. This is done automatically on first run and produces a modest-sized model suitable for interactive use.
+
+8) Extending or debugging (developer note)
+
+- The app uses small, test-friendly components so you can modify evaluation heuristics in `app.py` or add new language support in `runtime_harness.py`.
+- To validate Python syntax quickly, run:
+
+```powershell
+python -m py_compile app.py
 ```
 
-- Train the graph energy model (example):
+- If you add new dependencies, update `requirements.txt` so local setup remains reproducible.
 
-```bash
-python graph_energy_model.py --csv eco_logic_synthetic_benchmark.csv --epochs 30 --save-path graph_energy_model.pth
-```
+Troubleshooting (practical tips)
+-------------------------------
 
-- Evaluate the saved graph energy model:
+- If measured runtimes are failing for C#: verify `dotnet --version` runs and returns a version.
+- If the LLM assistant returns no output, check that any API key is loaded into environment variables (or paste LLM output into the LLM output box manually).
+- If the certificate download button is missing, check the app UI panel labeled "Certificates" in the sidebar — generated PDFs are stored there.
 
-```bash
-python evaluate_saved_graph_model.py --saved-model graph_energy_model.pth --baseline-model feature_engineered_rf_model.pkl --csv eco_logic_synthetic_benchmark.csv
-```
+Privacy & Security
+--------------------------
 
-## Models and artifacts
-
-- `baseline_rf_model.pkl`, `feature_engineered_rf_model.pkl` — scikit-learn RandomForest predictors with 9-feature compatibility.
-- `graph_energy_model.pth` — PyTorch graph energy regressor checkpoint.
-- `eco_logic_synthetic_benchmark.csv` — benchmark dataset used for initial prototyping.
-
-Keep large artifacts out of Git (add them to `.gitignore`) and store model checkpoints in a separate release storage if required.
-
-## How to accept the optimized refactor into the UI (manual)
-
-1. Run evaluation script to generate candidate JSON: `scripts/eval_refactor_candidates_output.json`.
-2. In the Streamlit UI, select the candidate you want to accept (heuristic or LLM). The UI will display the accepted candidate and update the Pareto.
-3. To persist accepted code, update `st.session_state` usage in `app.py` or save the chosen candidate to `data/accepted_refactor.cpp` (or similar) via the UI controls.
-
-## Git: commit & push (recommended workflow)
-
-Use the following sequence for a clean commit and push. Replace `origin` and `main` as appropriate.
-
-```bash
-# show status
-git status
-
-# create a feature branch
-git checkout -b feat/accept-early-exit-bubble
-
-# stage changes
-git add .
-
-# commit with concise message
-git commit -m "feat: accept early-exit bubble refactor; update prompts and eval script"
-
-# push branch
-git push -u origin feat/accept-early-exit-bubble
-```
-
-If you need to squash or rebase before merging into `main`, use your project's PR workflow.
-
-## Tests & verification
-
-Run the evaluation script and `evaluate_saved_graph_model.py` to sanity check models.
-
-Optional quick smoke tests
-
-```bash
-python -m pytest -q tests || true
-```
-
-## Developer notes
-
-- LLM outputs are strictly validated by `has_valid_function_body()` and `validate_feature_vector_9()` to ensure algorithmic implementations (no library-only shortcuts) before accepting them.
-- Measured runtime (`runtime_harness.py`) is preferred over proxy predictions when available; UI Pareto uses measured values when present.
-
-## Licensing and contribution
-
-Add your preferred license in `LICENSE` and contribution guide in `CONTRIBUTING.md` if you intend to accept external PRs.
-
----
-If you'd like, I can also add a `requirements.txt`, `CONTRIBUTING.md`, or a small test that verifies the `early_exit_bubble` heuristic outperforms the original for the provided benchmark.
-
+- EcoLogic runs locally by default and analyzes only files you provide. If you configure an external LLM service, be mindful of what source code you transmit to that service.
